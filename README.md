@@ -1,6 +1,6 @@
 # CarrotToy
 
-A material editor lab implementation inspired by Unreal and Unity, featuring runtime shader editing capabilities. Built with Xmake, supporting both real-time rasterization and offline ray tracing.
+![Header](.\assets\Header.png)A material editor lab implementation inspired by Unreal and Unity, featuring runtime shader editing capabilities. Built with Xmake, supporting both real-time rasterization and offline ray tracing.
 
 ## Features
 
