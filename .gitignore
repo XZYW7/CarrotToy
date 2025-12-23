@@ -1,0 +1,48 @@
+# .gitignore for xmake projects
+
+# xmake build output
+/build/
+/build/**
+
+# xmake internal files
+.xmake/
+.xmake.d/
+xmake.lock
+xmake.lua.user
+xmake.profile
+xmake.log
+
+# common compiled artifacts
+bin/
+lib/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.ilk
+
+# IDE / editor
+.vscode/
+.idea/
+*.suo
+*.user
+*.sln
+*.vcxproj*
+*.ncb
+*.sdf
+
+# OS / temp files
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+*.log
+
+# local dependency / package folders (optional)
+packages/
+deps/
