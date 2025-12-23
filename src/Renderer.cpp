@@ -228,7 +228,7 @@ void Renderer::setupFramebuffer() {
 void Renderer::exportSceneForRayTracing(const std::string& outputPath) {
     // Export scene data for offline ray tracing
     std::cout << "Exporting scene to: " << outputPath << std::endl;
-    // Implementation would save scene geometry and materials to file
+    // TODO : Implementation would save scene geometry and materials to file
 }
 
 void Renderer::performOfflineRayTrace(const std::string& scenePath, const std::string& outputPath) {
