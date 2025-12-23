@@ -7,7 +7,30 @@
 	"settings": {
 		"C_Cpp.default.compileCommands": [
 			"${workspaceFolder}/.vscode/compile_commands.json"
-		]
+		],
+		"todo-tree.highlights.defaultHighlight": {
+			"foreground": "pink", // Fit Catppucin Theme
+			"fontStyle": "bold",
+			// "textDecoration": "underline"
+		},
+		"todo-tree.general.tags": [
+			"BUG",
+			"HACK",
+			"FIXME",
+			"TODO",
+			"XXX",
+			"[ ]",
+			"[x]",
+			"TODO :",
+			"DOING :"
+		],
+		"todo-tree.general.tagGroups": {
+			"TODO": [
+				"TODO",
+				"TODO :",
+				"DOING :"
+			]
 
+		}
 	}
 }

@@ -228,13 +228,14 @@ void Renderer::setupFramebuffer() {
 void Renderer::exportSceneForRayTracing(const std::string& outputPath) {
     // Export scene data for offline ray tracing
     std::cout << "Exporting scene to: " << outputPath << std::endl;
-    // Implementation would save scene geometry and materials to file
+    // TODO : Implementation would save scene geometry and materials to file
 }
 
 void Renderer::performOfflineRayTrace(const std::string& scenePath, const std::string& outputPath) {
     // Perform offline ray tracing
     std::cout << "Performing offline ray trace from: " << scenePath << " to: " << outputPath << std::endl;
     // Implementation would load scene and ray trace
+    // TODO : Actual ray tracing implementation
 }
 
 } // namespace CarrotToy
