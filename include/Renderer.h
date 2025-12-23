@@ -1,0 +1,55 @@
+#pragma once
+
+#include <memory>
+#include <string>
+
+struct GLFWwindow;
+
+namespace CarrotToy {
+
+class Shader;
+class Material;
+
+// Renderer class - manages the rendering pipeline
+class Renderer {
+public:
+    enum class RenderMode {
+        Rasterization,  // Real-time rasterization
+        RayTracing      // Offline ray tracing
+    };
+    
+    Renderer();
+    ~Renderer();
+    
+    bool initialize(int width, int height, const std::string& title);
+    void shutdown();
+    
+    void beginFrame();
+    void endFrame();
+    
+    void renderMaterialPreview(std::shared_ptr<Material> material);
+    void renderScene();
+    
+    bool shouldClose();
+    GLFWwindow* getWindow() { return window; }
+    
+    void setRenderMode(RenderMode mode) { renderMode = mode; }
+    RenderMode getRenderMode() const { return renderMode; }
+    
+    // Offline ray tracing
+    void exportSceneForRayTracing(const std::string& outputPath);
+    void performOfflineRayTrace(const std::string& scenePath, const std::string& outputPath);
+    
+private:
+    GLFWwindow* window;
+    int width, height;
+    RenderMode renderMode;
+    
+    unsigned int sphereVAO, sphereVBO, sphereEBO;
+    unsigned int previewFBO, previewTexture;
+    
+    void setupPreviewGeometry();
+    void setupFramebuffer();
+};
+
+} // namespace CarrotToy
