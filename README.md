@@ -175,9 +175,49 @@ Extend the `Renderer` class to add:
 - Advanced lighting systems
 - Shadow mapping
 
+## Documentation
+
+- **[Quick Start Guide](QUICKSTART.md)** - Get started in 1 minute
+- **[Build Instructions](BUILD.md)** - Detailed build guide
+- **[Tutorial](TUTORIAL.md)** - Step-by-step learning path
+- **[Examples](EXAMPLES.md)** - Code examples and snippets
+- **[Architecture](ARCHITECTURE.md)** - System design documentation
+- **[Contributing](CONTRIBUTING.md)** - How to contribute
+- **[Changelog](CHANGELOG.md)** - Version history
+
+## Project Status
+
+**Version**: 0.1.0 (Initial Release)
+
+### Implemented Features
+✅ Real-time rasterization with OpenGL  
+✅ Material system with parameter management  
+✅ Runtime shader editing and hot-reloading  
+✅ ImGui-based material editor interface  
+✅ PBR shader implementation  
+✅ CPU-based ray tracing  
+✅ Material preview with 3D sphere  
+✅ Xmake and CMake build support  
+
+### Planned Features
+🔄 Texture support for materials  
+🔄 Multiple geometry types  
+🔄 Material save/load system  
+🔄 Node-based shader editor  
+🔄 Real-time ray tracing (GPU)  
+🔄 Post-processing effects  
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed roadmap.
+
+## Community
+
+- **Issues**: Report bugs or request features on GitHub Issues
+- **Discussions**: Ask questions and share ideas
+- **Pull Requests**: Contribute code improvements
+
 ## License
 
-This project is open source and available for educational purposes.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
@@ -185,3 +225,10 @@ This project is open source and available for educational purposes.
 - Built with Xmake build system
 - Uses ImGui for the editor interface
 - PBR implementation based on LearnOpenGL tutorials
+- Ray tracing concepts from "Ray Tracing in One Weekend"
+
+## Contributors
+
+Thanks to all contributors who help make CarrotToy better!
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to learn how you can contribute.
