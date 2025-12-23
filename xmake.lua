@@ -7,10 +7,15 @@ set_languages("c++17")
 
 add_rules("mode.debug", "mode.release")
 
--- Add required packages
-add_requires("glfw", "glad", "glm", "imgui", "stb")
-
--- Main application target
+add_requires("glfw", "glad", "glm", "stb")
+add_requires("imgui", { 
+    configs = {
+        glfw = true,  -- 指定后端，可选sdl2、glut等
+        opengl3 = true, -- 指定渲染API版本
+        freetype = true,   -- 启用FreeType字体支持
+        docking = true     -- 启用 docking 特性
+    }
+})
 target("CarrotToy")
     set_kind("binary")
     add_files("src/*.cpp")
