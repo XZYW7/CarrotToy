@@ -15,7 +15,7 @@ uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
 
-const float PI = 3.14159265359;
+const float PI = 3.14159265358979323846;
 
 // PBR functions
 float DistributionGGX(vec3 N, vec3 H, float roughness)

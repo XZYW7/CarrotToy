@@ -188,21 +188,24 @@ void MaterialEditor::showPreviewWindow() {
 }
 
 void MaterialEditor::renderMaterialParameter(const std::string& name, void* data, int type) {
-    switch (type) {
-        case 0: // Float
+    using ParamType = CarrotToy::ShaderParamType;
+    switch (static_cast<ParamType>(type)) {
+        case ParamType::Float:
             ImGui::DragFloat(name.c_str(), (float*)data, 0.01f);
             break;
-        case 2: // Vec3
+        case ParamType::Vec3:
             ImGui::ColorEdit3(name.c_str(), (float*)data);
             break;
-        case 3: // Vec4
+        case ParamType::Vec4:
             ImGui::ColorEdit4(name.c_str(), (float*)data);
             break;
-        case 4: // Int
+        case ParamType::Int:
             ImGui::DragInt(name.c_str(), (int*)data);
             break;
-        case 5: // Bool
+        case ParamType::Bool:
             ImGui::Checkbox(name.c_str(), (bool*)data);
+            break;
+        default:
             break;
     }
 }

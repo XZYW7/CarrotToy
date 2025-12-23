@@ -53,7 +53,19 @@ bool Shader::compile(const std::string& vertexSource, const std::string& fragmen
         return false;
     }
     
-    if (!linkProgram(vertex, fragment)) {
+    // Create and link program
+    unsigned int newProgramID = glCreateProgram();
+    glAttachShader(newProgramID, vertex);
+    glAttachShader(newProgramID, fragment);
+    glLinkProgram(newProgramID);
+    
+    int success;
+    glGetProgramiv(newProgramID, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(newProgramID, 512, nullptr, infoLog);
+        std::cerr << "Shader linking failed: " << infoLog << std::endl;
+        glDeleteProgram(newProgramID);
         glDeleteShader(vertex);
         glDeleteShader(fragment);
         return false;
@@ -64,21 +76,7 @@ bool Shader::compile(const std::string& vertexSource, const std::string& fragmen
         glDeleteProgram(programID);
     }
     
-    programID = glCreateProgram();
-    glAttachShader(programID, vertex);
-    glAttachShader(programID, fragment);
-    glLinkProgram(programID);
-    
-    int success;
-    glGetProgramiv(programID, GL_LINK_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetProgramInfoLog(programID, 512, nullptr, infoLog);
-        std::cerr << "Shader linking failed: " << infoLog << std::endl;
-        glDeleteShader(vertex);
-        glDeleteShader(fragment);
-        return false;
-    }
+    programID = newProgramID;
     
     glDeleteShader(vertex);
     glDeleteShader(fragment);
@@ -106,7 +104,9 @@ bool Shader::compileShader(unsigned int& shader, int type, const std::string& so
 }
 
 bool Shader::linkProgram(unsigned int vertex, unsigned int fragment) {
-    return true; // Linking is done in compile()
+    // Linking is now done directly in compile() function
+    // This function is kept for compatibility but is no longer used
+    return true;
 }
 
 void Shader::setFloat(const std::string& name, float value) {
@@ -143,6 +143,29 @@ Material::Material(const std::string& name, std::shared_ptr<Shader> shader)
 }
 
 Material::~Material() {
+    // Clean up parameter data
+    for (auto& [name, param] : parameters) {
+        switch (param.type) {
+            case ShaderParamType::Float:
+                delete static_cast<float*>(param.data);
+                break;
+            case ShaderParamType::Vec3:
+            case ShaderParamType::Vec4:
+                delete[] static_cast<float*>(param.data);
+                break;
+            case ShaderParamType::Int:
+                delete static_cast<int*>(param.data);
+                break;
+            case ShaderParamType::Bool:
+                delete static_cast<bool*>(param.data);
+                break;
+            case ShaderParamType::Texture2D:
+                delete static_cast<unsigned int*>(param.data);
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 void Material::bind() {

@@ -115,7 +115,8 @@ void Renderer::renderMaterialPreview(std::shared_ptr<Material> material) {
     // Render sphere
     if (sphereVAO) {
         glBindVertexArray(sphereVAO);
-        glDrawElements(GL_TRIANGLES, 100 * 100 * 6, GL_UNSIGNED_INT, 0);
+        // Calculate actual element count: latitudes * longitudes * 6 (2 triangles per quad)
+        glDrawElements(GL_TRIANGLES, 50 * 50 * 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
     
@@ -143,16 +144,17 @@ void Renderer::setupPreviewGeometry() {
     // Create a simple sphere for material preview
     const int latitudes = 50;
     const int longitudes = 50;
+    const float PI = 3.14159265358979323846f;
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
     
     for (int lat = 0; lat <= latitudes; ++lat) {
-        float theta = lat * M_PI / latitudes;
+        float theta = lat * PI / latitudes;
         float sinTheta = sin(theta);
         float cosTheta = cos(theta);
         
         for (int lon = 0; lon <= longitudes; ++lon) {
-            float phi = lon * 2 * M_PI / longitudes;
+            float phi = lon * 2 * PI / longitudes;
             float sinPhi = sin(phi);
             float cosPhi = cos(phi);
             
