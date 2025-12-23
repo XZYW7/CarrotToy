@@ -77,6 +77,18 @@ xmake
 xmake clean
 ```
 
+### Editor Configure
+
+```bash
+# Generate compile commands
+xmake project -k compile_commands
+
+# vscode setting
+"C_Cpp.default.compileCommands": [
+    "${workspaceFolder}/.vscode/compile_commands.json"
+]
+```
+
 ## Usage
 
 ### Material Editor Interface

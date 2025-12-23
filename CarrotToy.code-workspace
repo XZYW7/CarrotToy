@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"C_Cpp.default.compileCommands": [
+			"${workspaceFolder}/.vscode/compile_commands.json"
+		]
+
+	}
+}
