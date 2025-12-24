@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include <iostream>
 #include <cstring>
+#include <algorithm>
 
 namespace CarrotToy {
 namespace RHI {
@@ -233,8 +234,16 @@ void OpenGLShaderProgram::attachShader(IRHIShader* shader) {
     // Cast to OpenGL shader to get backend-specific handle
     // This is acceptable as this is backend implementation code
     if (auto* glShader = dynamic_cast<OpenGLShader*>(shader)) {
-        glAttachShader(programID, glShader->getShaderID());
-        attachedShaders.push_back(glShader->getShaderID());
+        unsigned int shaderID = glShader->getShaderID();
+        
+        // Check if already attached to avoid duplicates
+        if (std::find(attachedShaders.begin(), attachedShaders.end(), shaderID) != attachedShaders.end()) {
+            std::cerr << "Shader already attached to program" << std::endl;
+            return;
+        }
+        
+        glAttachShader(programID, shaderID);
+        attachedShaders.push_back(shaderID);
     } else {
         std::cerr << "Shader is not an OpenGL shader - cannot attach to OpenGL program" << std::endl;
     }
@@ -247,7 +256,14 @@ void OpenGLShaderProgram::detachShader(IRHIShader* shader) {
     
     // Cast to OpenGL shader to get backend-specific handle
     if (auto* glShader = dynamic_cast<OpenGLShader*>(shader)) {
-        glDetachShader(programID, glShader->getShaderID());
+        unsigned int shaderID = glShader->getShaderID();
+        glDetachShader(programID, shaderID);
+        
+        // Remove from tracking vector
+        auto it = std::find(attachedShaders.begin(), attachedShaders.end(), shaderID);
+        if (it != attachedShaders.end()) {
+            attachedShaders.erase(it);
+        }
     }
 }
 
