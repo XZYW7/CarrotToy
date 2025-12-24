@@ -47,6 +47,10 @@ class IRHIShaderProgram : public IRHIResource {
 public:
     virtual ~IRHIShaderProgram() = default;
     
+    // Shader attachment
+    virtual void attachShader(IRHIShader* shader) = 0;
+    virtual void detachShader(IRHIShader* shader) = 0;
+    
     // Program operations
     virtual bool link() = 0;
     virtual void bind() = 0;

@@ -69,6 +69,9 @@ public:
     OpenGLShaderProgram();
     ~OpenGLShaderProgram() override;
     
+    void attachShader(IRHIShader* shader) override;
+    void detachShader(IRHIShader* shader) override;
+    
     bool link() override;
     void bind() override;
     void unbind() override;
@@ -85,9 +88,6 @@ public:
     
     bool isValid() const override { return programID != 0; }
     void release() override;
-    
-    void attachShader(IRHIShader* shader);
-    void detachShader(IRHIShader* shader);
     
 private:
     unsigned int programID;

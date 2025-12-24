@@ -35,15 +35,39 @@ static unsigned int toGLShaderType(ShaderType type) {
     }
 }
 
+static unsigned int toGLTextureInternalFormat(TextureFormat format) {
+    switch (format) {
+        case TextureFormat::RGB8:            return GL_RGB8;
+        case TextureFormat::RGBA8:           return GL_RGBA8;
+        case TextureFormat::RGBA16F:         return GL_RGBA16F;
+        case TextureFormat::RGBA32F:         return GL_RGBA32F;
+        case TextureFormat::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
+        case TextureFormat::Depth32F:        return GL_DEPTH_COMPONENT32F;
+        default: return GL_RGBA8;
+    }
+}
+
 static unsigned int toGLTextureFormat(TextureFormat format) {
     switch (format) {
-        case TextureFormat::RGB8:           return GL_RGB;
-        case TextureFormat::RGBA8:          return GL_RGBA;
-        case TextureFormat::RGBA16F:        return GL_RGBA16F;
-        case TextureFormat::RGBA32F:        return GL_RGBA32F;
-        case TextureFormat::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
-        case TextureFormat::Depth32F:       return GL_DEPTH_COMPONENT32F;
+        case TextureFormat::RGB8:            return GL_RGB;
+        case TextureFormat::RGBA8:           return GL_RGBA;
+        case TextureFormat::RGBA16F:         return GL_RGBA;
+        case TextureFormat::RGBA32F:         return GL_RGBA;
+        case TextureFormat::Depth24Stencil8: return GL_DEPTH_STENCIL;
+        case TextureFormat::Depth32F:        return GL_DEPTH_COMPONENT;
         default: return GL_RGBA;
+    }
+}
+
+static unsigned int toGLTextureDataType(TextureFormat format) {
+    switch (format) {
+        case TextureFormat::RGB8:            return GL_UNSIGNED_BYTE;
+        case TextureFormat::RGBA8:           return GL_UNSIGNED_BYTE;
+        case TextureFormat::RGBA16F:         return GL_FLOAT;
+        case TextureFormat::RGBA32F:         return GL_FLOAT;
+        case TextureFormat::Depth24Stencil8: return GL_UNSIGNED_INT_24_8;
+        case TextureFormat::Depth32F:        return GL_FLOAT;
+        default: return GL_UNSIGNED_BYTE;
     }
 }
 
@@ -296,14 +320,9 @@ OpenGLTexture::OpenGLTexture(const TextureDesc& desc)
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
     
+    unsigned int internalFormat = toGLTextureInternalFormat(format);
     unsigned int glFormat = toGLTextureFormat(format);
-    unsigned int internalFormat = glFormat;
-    unsigned int dataType = GL_UNSIGNED_BYTE;
-    
-    // Determine internal format and data type based on format
-    if (format == TextureFormat::RGBA16F || format == TextureFormat::RGBA32F) {
-        dataType = GL_FLOAT;
-    }
+    unsigned int dataType = toGLTextureDataType(format);
     
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, glFormat, dataType, desc.initialData);
     
@@ -329,14 +348,11 @@ void OpenGLTexture::updateData(const void* data, uint32_t newWidth, uint32_t new
     
     glBindTexture(GL_TEXTURE_2D, textureID);
     
+    unsigned int internalFormat = toGLTextureInternalFormat(format);
     unsigned int glFormat = toGLTextureFormat(format);
-    unsigned int dataType = GL_UNSIGNED_BYTE;
+    unsigned int dataType = toGLTextureDataType(format);
     
-    if (format == TextureFormat::RGBA16F || format == TextureFormat::RGBA32F) {
-        dataType = GL_FLOAT;
-    }
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, glFormat, width, height, 0, glFormat, dataType, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, glFormat, dataType, data);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 

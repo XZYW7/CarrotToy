@@ -105,11 +105,8 @@ vertexShader->compile();
 
 // 4. Create shader program
 auto shaderProgram = rhiDevice->createShaderProgram();
-// Note: Cast to OpenGLShaderProgram to attach shaders (API-specific)
-if (auto* glProgram = dynamic_cast<OpenGLShaderProgram*>(shaderProgram.get())) {
-    glProgram->attachShader(vertexShader.get());
-    glProgram->attachShader(fragmentShader.get());
-}
+shaderProgram->attachShader(vertexShader.get());
+shaderProgram->attachShader(fragmentShader.get());
 shaderProgram->link();
 
 // 5. Set up vertex array
@@ -121,6 +118,7 @@ RHI::VertexAttribute posAttr;
 posAttr.location = 0;
 posAttr.componentCount = 3;
 posAttr.offset = 0;
+posAttr.stride = 0;  // 0 = automatically calculated
 vertexArray->setVertexAttribute(posAttr);
 
 // 6. Render
@@ -266,15 +264,13 @@ When implementing new backends, be aware of API differences:
 4. **Cache Uniforms**: Don't set uniforms every frame if values don't change
 5. **Minimize State Changes**: Group draw calls to reduce overhead
 6. **Use Appropriate Buffer Usage**: Match BufferUsage to actual usage pattern
-7. **Set Vertex Stride**: Always set the stride field in VertexAttribute for proper interleaved data
+7. **Set Vertex Stride**: Set the stride field in VertexAttribute (0 for automatic calculation, or specify bytes between vertices)
+8. **Attach Shaders Before Linking**: Always attach all shaders to a program before calling link()
 
 ## Known Limitations
 
-1. **Shader Attachment**: Currently requires backend-specific cast to attach shaders to program
-   - Workaround: Cast to OpenGLShaderProgram to access attachShader()
-   - Future: Consider adding attachShader to IRHIShaderProgram interface
-
-2. **External Texture Ownership**: When attaching external textures to framebuffers, caller must keep them alive
+1. **External Texture Ownership**: When attaching external textures to framebuffers, caller must keep them alive
+   - Internal textures created by framebuffer constructor are automatically managed
 
 ## Debugging
 

@@ -107,15 +107,9 @@ void demonstrateRHIUsage() {
     // 6. Create shader program
     auto shaderProgram = rhiDevice->createShaderProgram();
     
-    // NOTE: Shader attachment currently requires backend-specific cast
-    // This is a known limitation - consider adding attachShader to IRHIShaderProgram interface
-    if (auto* glProgram = dynamic_cast<OpenGLShaderProgram*>(shaderProgram.get())) {
-        glProgram->attachShader(vertexShader.get());
-        glProgram->attachShader(fragmentShader.get());
-    } else {
-        std::cerr << "Failed to cast to OpenGLShaderProgram" << std::endl;
-        return;
-    }
+    // Attach shaders using the RHI interface (no backend-specific cast needed)
+    shaderProgram->attachShader(vertexShader.get());
+    shaderProgram->attachShader(fragmentShader.get());
     
     if (!shaderProgram->link()) {
         std::cerr << "Shader program linking failed: " << shaderProgram->getLinkErrors() << std::endl;

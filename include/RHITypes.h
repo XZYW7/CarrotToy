@@ -125,7 +125,7 @@ struct VertexAttribute {
     uint32_t binding;
     uint32_t offset;
     uint32_t componentCount;  // 1, 2, 3, or 4
-    uint32_t stride;          // Byte stride between consecutive attributes (0 = tightly packed)
+    uint32_t stride;          // Byte offset between consecutive vertices (0 = automatically calculated by OpenGL)
     bool normalized;
 };
 
