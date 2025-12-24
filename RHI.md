@@ -272,6 +272,9 @@ When implementing new backends, be aware of API differences:
 1. **External Texture Ownership**: When attaching external textures to framebuffers, caller must keep them alive
    - Internal textures created by framebuffer constructor are automatically managed
 
+2. **Backend Type Safety**: Shaders and resources must be created from the same RHI device
+   - Mixing resources from different backends (e.g., OpenGL shader with Vulkan program) will fail gracefully with error message
+
 ## Debugging
 
 ### Shader Compilation Errors

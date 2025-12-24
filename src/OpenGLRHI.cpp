@@ -63,7 +63,7 @@ static unsigned int toGLTextureDataType(TextureFormat format) {
     switch (format) {
         case TextureFormat::RGB8:            return GL_UNSIGNED_BYTE;
         case TextureFormat::RGBA8:           return GL_UNSIGNED_BYTE;
-        case TextureFormat::RGBA16F:         return GL_FLOAT;
+        case TextureFormat::RGBA16F:         return GL_HALF_FLOAT;
         case TextureFormat::RGBA32F:         return GL_FLOAT;
         case TextureFormat::Depth24Stencil8: return GL_UNSIGNED_INT_24_8;
         case TextureFormat::Depth32F:        return GL_FLOAT;
@@ -225,13 +225,27 @@ OpenGLShaderProgram::~OpenGLShaderProgram() {
 }
 
 void OpenGLShaderProgram::attachShader(IRHIShader* shader) {
+    if (!shader) {
+        std::cerr << "Cannot attach null shader" << std::endl;
+        return;
+    }
+    
+    // Cast to OpenGL shader to get backend-specific handle
+    // This is acceptable as this is backend implementation code
     if (auto* glShader = dynamic_cast<OpenGLShader*>(shader)) {
         glAttachShader(programID, glShader->getShaderID());
         attachedShaders.push_back(glShader->getShaderID());
+    } else {
+        std::cerr << "Shader is not an OpenGL shader - cannot attach to OpenGL program" << std::endl;
     }
 }
 
 void OpenGLShaderProgram::detachShader(IRHIShader* shader) {
+    if (!shader) {
+        return;
+    }
+    
+    // Cast to OpenGL shader to get backend-specific handle
     if (auto* glShader = dynamic_cast<OpenGLShader*>(shader)) {
         glDetachShader(programID, glShader->getShaderID());
     }
