@@ -23,6 +23,11 @@ CarrotToy is designed as a modular material editor with clear separation of conc
     └───────────┬───────────────────────────────────────┘
                 │
     ┌───────────▼──────────┐    ┌────────────────────┐
+    │   RHI Abstraction    │◄───┤  Graphics Backend  │
+    │   (RHI.h/cpp)        │    │  (OpenGLRHI.cpp)   │
+    └───────────┬──────────┘    └────────────────────┘
+                │
+    ┌───────────▼──────────┐    ┌────────────────────┐
     │   Ray Tracer         │    │   OpenGL/GLFW      │
     │   (RayTracer.cpp)    │    │   (glad, glfw3)    │
     └──────────────────────┘    └────────────────────┘
@@ -132,6 +137,68 @@ CarrotToy is designed as a modular material editor with clear separation of conc
 **Design Patterns**:
 - Functional programming style
 - Data-oriented design (structures of arrays)
+
+### 5. RHI (Render Hardware Interface) (`RHI.h`, `OpenGLRHI.h/cpp`)
+
+**Purpose**: Provides an abstraction layer over graphics APIs, enabling multi-API support.
+
+**Components**:
+
+#### RHI Core Interfaces
+- `IRHIDevice`: Main entry point for creating and managing graphics resources
+- `IRHIBuffer`: Abstraction for vertex, index, and uniform buffers
+- `IRHIShader`: Individual shader stage (vertex, fragment, geometry)
+- `IRHIShaderProgram`: Complete shader program with multiple stages
+- `IRHITexture`: 2D texture with configurable format and filtering
+- `IRHIFramebuffer`: Offscreen render target with color and depth attachments
+- `IRHIVertexArray`: Vertex input layout configuration
+
+#### OpenGL Implementation
+- `OpenGLRHIDevice`: OpenGL-specific implementation of IRHIDevice
+- `OpenGLBuffer`, `OpenGLShader`, etc.: Concrete implementations wrapping OpenGL objects
+- Type conversion utilities for mapping RHI enums to OpenGL constants
+- Resource lifecycle management with RAII principles
+
+**Key Features**:
+- **API Abstraction**: Decouples rendering code from specific graphics API
+- **Future Extensibility**: Designed to support Vulkan, DirectX, Metal
+- **Type Safety**: Strongly-typed enums for buffer types, texture formats, etc.
+- **Resource Management**: Smart pointers and RAII for automatic cleanup
+- **State Management**: Centralized rendering state (depth test, blending, culling)
+
+**Design Patterns**:
+- Abstract Factory pattern (IRHIDevice creates resources)
+- Bridge pattern (separates abstraction from implementation)
+- RAII for resource management
+- Strategy pattern (different backends for different APIs)
+
+**Usage Example**:
+```cpp
+// Create RHI device
+auto rhiDevice = createRHIDevice(GraphicsAPI::OpenGL);
+rhiDevice->initialize();
+
+// Create buffer
+BufferDesc desc;
+desc.type = BufferType::Vertex;
+desc.size = sizeof(vertices);
+desc.initialData = vertices;
+auto buffer = rhiDevice->createBuffer(desc);
+
+// Set rendering state
+rhiDevice->setDepthTest(true);
+rhiDevice->setViewport(0, 0, width, height);
+
+// Draw
+rhiDevice->draw(PrimitiveTopology::TriangleList, vertexCount);
+```
+
+**Benefits**:
+1. **Multi-Platform Support**: Easy to add Vulkan, DirectX, or Metal backends
+2. **Testing**: Can mock IRHIDevice for unit tests
+3. **Profiling**: Single place to instrument all graphics calls
+4. **Optimization**: Backend-specific optimizations without changing high-level code
+5. **Maintenance**: Changes to one API don't affect others
 
 ## Data Flow
 
@@ -258,6 +325,33 @@ Current implementation is **single-threaded**:
 - Material updates need synchronization if done from background threads
 
 ## Extension Points
+
+### Adding New Graphics API Backends
+
+1. Create new header/implementation files (e.g., `VulkanRHI.h/cpp`)
+2. Implement all `IRHIDevice` interfaces
+3. Implement all resource classes (`IRHIBuffer`, `IRHIShader`, etc.)
+4. Add case to `createRHIDevice()` factory function
+5. Handle API-specific initialization and cleanup
+
+Example structure for Vulkan:
+```cpp
+class VulkanRHIDevice : public IRHIDevice {
+    VkInstance instance;
+    VkDevice device;
+    VkQueue graphicsQueue;
+    // ... Vulkan-specific resources
+    
+    bool initialize() override {
+        // Create VkInstance, select physical device, create logical device
+    }
+    
+    std::shared_ptr<IRHIBuffer> createBuffer(const BufferDesc& desc) override {
+        return std::make_shared<VulkanBuffer>(desc, device);
+    }
+    // ... implement all virtual methods
+};
+```
 
 ### Adding New Material Parameter Types
 
