@@ -11,6 +11,7 @@
 - **Material Editor UI**: ImGui-based interface for intuitive material editing
 - **Hot Reload**: Automatic shader reloading when files are modified
 - **PBR Materials**: Built-in physically-based rendering shader support
+- **RHI (Render Hardware Interface)**: Graphics API abstraction layer for future multi-API support (Vulkan, DirectX, Metal)
 
 ## Architecture
 
@@ -210,6 +211,7 @@ Extend the `Renderer` class to add:
 ✅ CPU-based ray tracing  
 ✅ Material preview with 3D sphere  
 ✅ Xmake and CMake build support  
+✅ **RHI (Render Hardware Interface) abstraction layer**  
 
 ### Planned Features
 🔄 Texture support for materials  
@@ -218,6 +220,7 @@ Extend the `Renderer` class to add:
 🔄 Node-based shader editor  
 🔄 Real-time ray tracing (GPU)  
 🔄 Post-processing effects  
+🔄 Vulkan/DirectX/Metal backend support (via RHI)  
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed roadmap.
 

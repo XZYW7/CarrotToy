@@ -20,12 +20,12 @@ CarrotToy is a complete material editor lab implementation inspired by Unreal En
 - **Image I/O**: STB (stb_image_write)
 
 ### Project Statistics
-- **Total Files**: 25 files
-- **Source Files**: 5 C++ implementation files
-- **Header Files**: 4 C++ header files
+- **Total Files**: 32 files
+- **Source Files**: 7 C++ implementation files
+- **Header Files**: 8 C++ header files
 - **Shader Files**: 4 GLSL shader files (2 vertex, 2 fragment)
-- **Lines of Code**: ~1,200 LOC (excluding documentation)
-- **Documentation**: 10 markdown files (~25,000 words)
+- **Lines of Code**: ~2,500 LOC (excluding documentation)
+- **Documentation**: 10 markdown files (~30,000 words)
 
 ### File Structure
 ```
@@ -47,19 +47,25 @@ CarrotToy/
 │   ├── LICENSE                # MIT License
 │   └── assets/README.md       # Assets documentation
 │
-├── Source Code (9 files)
+├── Source Code (15 files)
 │   ├── include/               # Header files
 │   │   ├── Material.h         # Material & shader system
 │   │   ├── Renderer.h         # Rendering engine
 │   │   ├── MaterialEditor.h   # UI editor
-│   │   └── RayTracer.h        # Ray tracing system
+│   │   ├── RayTracer.h        # Ray tracing system
+│   │   ├── RHI.h              # RHI main interface
+│   │   ├── RHITypes.h         # RHI type definitions
+│   │   ├── RHIResources.h     # RHI resource abstractions
+│   │   └── OpenGLRHI.h        # OpenGL RHI implementation
 │   │
 │   └── src/                   # Implementation files
 │       ├── main.cpp           # Application entry point
 │       ├── Material.cpp       # Material implementation
 │       ├── Renderer.cpp       # Renderer implementation
 │       ├── MaterialEditor.cpp # UI implementation
-│       └── RayTracer.cpp      # Ray tracer implementation
+│       ├── RayTracer.cpp      # Ray tracer implementation
+│       ├── OpenGLRHI.cpp      # OpenGL RHI implementation
+│       └── RHIExample.cpp     # RHI usage example
 │
 └── Shaders (4 files)
     ├── default.vert           # Default vertex shader
@@ -111,6 +117,15 @@ CarrotToy/
 - Schlick-Beckmann geometry function
 - Fresnel-Schlick approximation
 - Albedo, metallic, roughness parameters
+
+### 7. RHI (Render Hardware Interface)
+- Graphics API abstraction layer
+- OpenGL backend implementation
+- Support for buffers, shaders, textures, framebuffers
+- Rendering state management (depth, blend, cull modes)
+- Designed for future Vulkan, DirectX, Metal support
+- Factory pattern for device creation
+- Resource lifecycle management with smart pointers
 
 ## Build System Features
 
