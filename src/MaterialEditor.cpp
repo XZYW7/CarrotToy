@@ -16,10 +16,13 @@ MaterialEditor::MaterialEditor()
 }
 
 MaterialEditor::~MaterialEditor() {
-    shutdown();
+    if (initialized) {
+        shutdown();
+    }
 }
 
 bool MaterialEditor::initialize(Renderer* r) {
+    initialized = true;
     renderer = r;
     
     // Setup Dear ImGui context
@@ -35,13 +38,20 @@ bool MaterialEditor::initialize(Renderer* r) {
     ImGui_ImplGlfw_InitForOpenGL(renderer->getWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
     
-    return true;
+    return initialized;
 }
 
 void MaterialEditor::shutdown() {
+    if (ImGui::GetCurrentContext() == nullptr) 
+    {
+        std::cerr << "MaterialEditor::shutdown called but ImGui context is null!" << std::endl;
+        return;
+    }
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+    renderer = nullptr;
+    initialized = false;
 }
 
 void MaterialEditor::render() {

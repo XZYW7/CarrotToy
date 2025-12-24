@@ -28,6 +28,8 @@ public:
     }
     
 private:
+    bool initialized = false;
+    
     Renderer* renderer;
     std::string selectedMaterialName;
     
