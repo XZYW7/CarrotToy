@@ -93,6 +93,7 @@ void Renderer::endFrame() {
 }
 
 void Renderer::renderMaterialPreview(std::shared_ptr<Material> material) {
+    setPreviewMaterial(material);
     if (!material) return;
     
     material->bind();
@@ -128,9 +129,8 @@ void Renderer::renderScene() {
     beginFrame();
     
     // Render with active materials
-    auto& materials = MaterialManager::getInstance().getAllMaterials();
-    if (!materials.empty()) {
-        renderMaterialPreview(materials.begin()->second);
+    if (!previewMaterial) {
+        renderMaterialPreview(previewMaterial);
     }
     
     endFrame();
@@ -139,7 +139,13 @@ void Renderer::renderScene() {
 bool Renderer::shouldClose() {
     return window ? glfwWindowShouldClose(window) : true;
 }
+void Renderer::setPreviewMaterial(std::shared_ptr<Material> m) {
+    previewMaterial = m;
+}
 
+std::shared_ptr<Material> Renderer::getPreviewMaterial() const {
+    return previewMaterial;
+}
 void Renderer::setupPreviewGeometry() {
     // Create a simple sphere for material preview
     const int latitudes = 50;

@@ -6,8 +6,64 @@
 #include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-
+#include <fstream>
+#include <cstring>
+#include <filesystem>
+#define LOG(X) std::cout << "[MaterialEditor] " << X << std::endl
 namespace CarrotToy {
+// 新增：从文件加载到 buffer 的小工具
+static void loadFileToBuffer(const std::string& path, char* buf, size_t bufSize) {
+    if (bufSize == 0) 
+    {
+        LOG("buffer = 0");
+        return;
+    }
+    // Find file
+    auto absPath = std::filesystem::absolute(path);
+    if (!std::filesystem::exists(absPath)) {
+        LOG("File NOT found at: " << absPath.string());
+        LOG("Current working dir: " << std::filesystem::current_path().string());
+        return;
+    } else {
+        LOG("Opening file: " << absPath.string());
+    }
+
+    std::ifstream ifs(absPath);
+    if (!ifs) { buf[0] = '\0'; LOG("failed to open file: " << absPath); return; }
+    std::string content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+    size_t n = std::min(content.size(), bufSize - 1);
+    memcpy(buf, content.data(), n);
+    buf[n] = '\0';
+}
+
+// 新增：尝试从 shader 对象或约定路径加载当前 shader 源
+void MaterialEditor::loadCurrentShaderSources() {
+    vertexShaderBuffer[0] = '\0';
+    fragmentShaderBuffer[0] = '\0';
+    if (selectedMaterialName.empty()) return;
+
+    auto material = MaterialManager::getInstance().getMaterial(selectedMaterialName);
+    LOG(material->getName());
+
+    if (!material) return;
+    auto shader = material->getShader();
+    if (!shader) return;
+
+    // 尝试通过 Shader 提供的路径接口加载（假定 getVertexPath/getFragmentPath 存在）
+    // 如果你的 Shader 类使用不同命名，请替换为对应的 getter。
+    std::string vpath, fpath;
+
+    // Fallback: try conventional shader file names under shaders/
+    vpath = shader->getVertexPath();
+    fpath = shader->getFragmentPath();
+
+    LOG(vpath);
+    LOG(fpath);
+    // 如果文件存在则读取到 buffer
+    loadFileToBuffer(vpath, vertexShaderBuffer, sizeof(vertexShaderBuffer));
+    loadFileToBuffer(fpath, fragmentShaderBuffer, sizeof(fragmentShaderBuffer));
+
+}
 
 MaterialEditor::MaterialEditor() 
     : renderer(nullptr), shaderEditorOpen(false) {
@@ -70,6 +126,11 @@ void MaterialEditor::render() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+std::shared_ptr<Material> MaterialEditor::getSelectedMaterial() const {
+    if (selectedMaterialName.empty()) return nullptr;
+    return MaterialManager::getInstance().getMaterial(selectedMaterialName);
+}
+
 void MaterialEditor::showMaterialList() {
     ImGui::Begin("Materials");
     
@@ -85,7 +146,20 @@ void MaterialEditor::showMaterialList() {
         ImGui::InputText("Name", materialName, 128);
         
         if (ImGui::Button("Create")) {
-            // Would need a default shader
+            auto defaultShader = std::make_shared<Shader>(
+                "shaders/default.vert",
+                "shaders/default.frag"
+            );
+            
+            // Create default material
+            auto defaultMaterial = MaterialManager::getInstance().createMaterial(
+                materialName, 
+                defaultShader
+            );
+            defaultMaterial->setVec3("albedo", 0.8f, 0.2f, 0.2f);
+            defaultMaterial->setFloat("metallic", 0.5f);
+            defaultMaterial->setFloat("roughness", 0.5f);
+            defaultMaterial->setVec3("color", 0.1f, 0.1f, 0.1f);
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -96,6 +170,7 @@ void MaterialEditor::showMaterialList() {
     for (auto& [name, material] : materials) {
         if (ImGui::Selectable(name.c_str(), selectedMaterialName == name)) {
             selectedMaterialName = name;
+            printf("Getting selected material: %s\n", selectedMaterialName.c_str());
         }
     }
     
@@ -117,6 +192,7 @@ void MaterialEditor::showMaterialProperties() {
             }
             
             if (ImGui::Button("Edit Shader")) {
+                loadCurrentShaderSources();
                 shaderEditorOpen = true;
             }
         }
@@ -135,7 +211,52 @@ void MaterialEditor::showShaderEditor() {
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save")) {
-                // TODO : Save shader
+                // TODO : Save shader to source file
+                // Currently saves to the build directory.
+
+                if (!selectedMaterialName.empty()) {
+                    auto material = MaterialManager::getInstance().getMaterial(selectedMaterialName);
+                    if (material && material->getShader()) {
+                        // 1. 获取路径
+                        std::string vPath = material->getShader()->getVertexPath();
+                        std::string fPath = material->getShader()->getFragmentPath();
+
+                        // 2. 定义保存辅助 lambda
+                        auto saveFile = [](const std::string& path, const char* content) -> bool {
+                            try {
+                                // 确保父目录存在 (例如 shaders/ 文件夹)
+                                auto p = std::filesystem::path(path);
+                                if (p.has_parent_path()) {
+                                    std::filesystem::create_directories(p.parent_path());
+                                }
+                                
+                                std::ofstream out(path, std::ios::trunc | std::ios::binary);
+                                if (out.is_open()) {
+                                    out << content;
+                                    LOG("Saved to: " << std::filesystem::absolute(p).string());
+                                    return true;
+                                }
+                            } catch (const std::exception& e) {
+                                LOG("Exception saving file: " << e.what());
+                            }
+                            LOG("Failed to save file: " << path);
+                            return false;
+                        };
+
+                        // 3. 执行保存
+                        bool vSaved = saveFile(vPath, vertexShaderBuffer);
+                        bool fSaved = saveFile(fPath, fragmentShaderBuffer);
+
+                        // 4. 保存成功后自动重新编译
+                        if (vSaved && fSaved) {
+                            if (material->getShader()->compile(vertexShaderBuffer, fragmentShaderBuffer)) {
+                                LOG("Shader recompiled successfully after save.");
+                            } else {
+                                LOG("Shader compilation failed after save!");
+                            }
+                        }
+                    }
+                }
             }
             if (ImGui::MenuItem("Recompile")) {
                 if (onShaderRecompile) {
@@ -146,7 +267,8 @@ void MaterialEditor::showShaderEditor() {
         }
         ImGui::EndMenuBar();
     }
-    
+
+
     ImGui::Text("Vertex Shader:");
     ImGui::InputTextMultiline("##vertex", vertexShaderBuffer, sizeof(vertexShaderBuffer), 
                               ImVec2(-1.0f, ImGui::GetTextLineHeight() * 16));

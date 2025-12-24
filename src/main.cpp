@@ -54,9 +54,9 @@ int main() {
     // Main loop
     while (!renderer->shouldClose()) {
         renderer->beginFrame();
-        
+        auto selected = editor->getSelectedMaterial() ? editor->getSelectedMaterial() : defaultMaterial;
         // Render scene with current material
-        renderer->renderMaterialPreview(defaultMaterial);
+        renderer->renderMaterialPreview(selected);
         
         // Render UI
         editor->render();

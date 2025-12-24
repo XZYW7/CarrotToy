@@ -54,6 +54,9 @@ public:
     void setInt(const std::string& name, int value);
     void setBool(const std::string& name, bool value);
     void setMatrix4(const std::string& name, const float* value);
+
+    std::string getVertexPath() const { return vertexPath; }
+    std::string getFragmentPath() const { return fragmentPath; }
     
 private:
     unsigned int programID;

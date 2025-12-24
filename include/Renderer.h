@@ -30,6 +30,9 @@ public:
     void renderMaterialPreview(std::shared_ptr<Material> material);
     void renderScene();
     
+    void setPreviewMaterial(std::shared_ptr<Material> m);
+    std::shared_ptr<Material> getPreviewMaterial() const;
+
     bool shouldClose();
     GLFWwindow* getWindow() { return window; }
     
@@ -50,6 +53,8 @@ private:
     
     void setupPreviewGeometry();
     void setupFramebuffer();
+
+    std::shared_ptr<Material> previewMaterial;
 };
 
 } // namespace CarrotToy

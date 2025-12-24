@@ -36,7 +36,7 @@ target("CarrotToy")
     
     -- Copy shaders to build directory
     after_build(function (target)
-        os.cp("$(projectdir)/shaders", path.join(target:targetdir(), "shaders"))
+        os.cp("$(projectdir)/shaders", target:targetdir())
     end)
     
     set_targetdir("build/bin")

@@ -2,7 +2,7 @@
 
 #include <string>
 #include <functional>
-
+#include <memory>
 namespace CarrotToy {
 
 class Material;
@@ -18,6 +18,9 @@ public:
     void shutdown();
     
     void render();
+
+    std::shared_ptr<Material> getSelectedMaterial() const;
+
     void showMaterialList();
     void showMaterialProperties();
     void showShaderEditor();
@@ -26,10 +29,12 @@ public:
     void setOnShaderRecompile(std::function<void()> callback) { 
         onShaderRecompile = callback; 
     }
+
+
     
 private:
     bool initialized = false;
-    
+
     Renderer* renderer;
     std::string selectedMaterialName;
     
@@ -41,6 +46,7 @@ private:
     std::function<void()> onShaderRecompile;
     
     void renderMaterialParameter(const std::string& name, void* data, int type);
+    void loadCurrentShaderSources();
 };
 
 } // namespace CarrotToy
