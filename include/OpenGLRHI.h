@@ -150,8 +150,8 @@ public:
     
 private:
     unsigned int framebufferID;
-    std::vector<IRHITexture*> colorTextures;
-    IRHITexture* depthTexture;
+    std::vector<std::shared_ptr<IRHITexture>> colorTextures;
+    std::shared_ptr<IRHITexture> depthTexture;
     uint32_t width;
     uint32_t height;
 };

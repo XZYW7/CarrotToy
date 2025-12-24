@@ -370,7 +370,7 @@ OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferDesc& desc)
     auto colorTex = std::make_shared<OpenGLTexture>(colorDesc);
     
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex->getTextureID(), 0);
-    colorTextures.push_back(colorTex.get());
+    colorTextures.push_back(colorTex);
     
     // Create depth texture if requested
     if (desc.hasDepthStencil) {
@@ -381,7 +381,7 @@ OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferDesc& desc)
         auto depthTex = std::make_shared<OpenGLTexture>(depthDesc);
         
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex->getTextureID(), 0);
-        depthTexture = depthTex.get();
+        depthTexture = depthTex;
     }
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -405,10 +405,7 @@ void OpenGLFramebuffer::attachColorTexture(IRHITexture* texture, uint32_t attach
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachment, GL_TEXTURE_2D, glTexture->getTextureID(), 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
-        if (attachment >= colorTextures.size()) {
-            colorTextures.resize(attachment + 1, nullptr);
-        }
-        colorTextures[attachment] = texture;
+        // Note: Caller must keep texture alive - we only store for default textures created in constructor
     }
 }
 
@@ -417,7 +414,8 @@ void OpenGLFramebuffer::attachDepthTexture(IRHITexture* texture) {
         glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, glTexture->getTextureID(), 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        depthTexture = texture;
+        
+        // Note: Caller must keep texture alive - we only store for default textures created in constructor
     }
 }
 
@@ -430,13 +428,13 @@ bool OpenGLFramebuffer::isComplete() {
 
 IRHITexture* OpenGLFramebuffer::getColorTexture(uint32_t attachment) {
     if (attachment < colorTextures.size()) {
-        return colorTextures[attachment];
+        return colorTextures[attachment].get();
     }
     return nullptr;
 }
 
 IRHITexture* OpenGLFramebuffer::getDepthTexture() {
-    return depthTexture;
+    return depthTexture.get();
 }
 
 void OpenGLFramebuffer::release() {
@@ -494,7 +492,7 @@ void OpenGLVertexArray::setVertexAttribute(const VertexAttribute& attribute) {
         attribute.componentCount,
         GL_FLOAT,
         attribute.normalized ? GL_TRUE : GL_FALSE,
-        0,  // stride is 0 for tightly packed data
+        attribute.stride,  // Use stride from attribute
         (void*)(uintptr_t)attribute.offset
     );
     glBindVertexArray(0);

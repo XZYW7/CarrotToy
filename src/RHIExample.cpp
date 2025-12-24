@@ -107,10 +107,14 @@ void demonstrateRHIUsage() {
     // 6. Create shader program
     auto shaderProgram = rhiDevice->createShaderProgram();
     
-    // Cast to OpenGLShaderProgram to access attachShader
+    // NOTE: Shader attachment currently requires backend-specific cast
+    // This is a known limitation - consider adding attachShader to IRHIShaderProgram interface
     if (auto* glProgram = dynamic_cast<OpenGLShaderProgram*>(shaderProgram.get())) {
         glProgram->attachShader(vertexShader.get());
         glProgram->attachShader(fragmentShader.get());
+    } else {
+        std::cerr << "Failed to cast to OpenGLShaderProgram" << std::endl;
+        return;
     }
     
     if (!shaderProgram->link()) {
@@ -126,21 +130,23 @@ void demonstrateRHIUsage() {
     vertexArray->setVertexBuffer(vertexBuffer.get(), 0);
     vertexArray->setIndexBuffer(indexBuffer.get());
     
-    // Position attribute
+    // Position attribute (interleaved with color, stride = 6 floats)
     VertexAttribute positionAttr;
     positionAttr.location = 0;
     positionAttr.binding = 0;
     positionAttr.offset = 0;
     positionAttr.componentCount = 3;
+    positionAttr.stride = 6 * sizeof(float);  // position + color per vertex
     positionAttr.normalized = false;
     vertexArray->setVertexAttribute(positionAttr);
     
-    // Color attribute
+    // Color attribute (interleaved with position, stride = 6 floats)
     VertexAttribute colorAttr;
     colorAttr.location = 1;
     colorAttr.binding = 0;
     colorAttr.offset = 3 * sizeof(float);
     colorAttr.componentCount = 3;
+    colorAttr.stride = 6 * sizeof(float);  // position + color per vertex
     colorAttr.normalized = false;
     vertexArray->setVertexAttribute(colorAttr);
     

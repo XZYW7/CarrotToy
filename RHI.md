@@ -266,6 +266,15 @@ When implementing new backends, be aware of API differences:
 4. **Cache Uniforms**: Don't set uniforms every frame if values don't change
 5. **Minimize State Changes**: Group draw calls to reduce overhead
 6. **Use Appropriate Buffer Usage**: Match BufferUsage to actual usage pattern
+7. **Set Vertex Stride**: Always set the stride field in VertexAttribute for proper interleaved data
+
+## Known Limitations
+
+1. **Shader Attachment**: Currently requires backend-specific cast to attach shaders to program
+   - Workaround: Cast to OpenGLShaderProgram to access attachShader()
+   - Future: Consider adding attachShader to IRHIShaderProgram interface
+
+2. **External Texture Ownership**: When attaching external textures to framebuffers, caller must keep them alive
 
 ## Debugging
 
