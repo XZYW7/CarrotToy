@@ -2,6 +2,9 @@
 #include "OpenGLRHI.h"
 #include <iostream>
 #include <cstring>
+#include <GLFW/glfw3.h>
+#include <thread>
+#include <chrono>
 
 // Example demonstrating how to use the RHI (Render Hardware Interface)
 // This file is for demonstration purposes and shows the API usage patterns
@@ -13,7 +16,6 @@ namespace Example {
 void demonstrateRHIUsage() {
     // 1. Create an RHI device (OpenGL in this case)
     auto rhiDevice = createRHIDevice(GraphicsAPI::OpenGL);
-    rhiDevice->initialize();
     if (!rhiDevice) {
         std::cerr << "Failed to create RHI device" << std::endl;
         return;
@@ -196,7 +198,23 @@ void demonstrateRHIUsage() {
     shaderProgram->unbind();
     
     std::cout << "Render pass demonstrated" << std::endl;
-    
+    if (GLFWwindow* window = glfwGetCurrentContext()) 
+    {
+        // lazy to swap buffers here, not redrawing every frame
+        glfwSwapBuffers(window);
+        std::cout << "Entering event loop. Close the window to exit." << std::endl;
+        while (!glfwWindowShouldClose(window)) {
+            glfwPollEvents();
+            // glfwSwapBuffers(window);
+            std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60fps idle
+        }
+    } 
+    else 
+    {
+        // fallback: wait for user input so window doesn't disappear instantly
+        std::cout << "No GLFW context found; press Enter to exit..." << std::endl;
+        std::cin.get();
+    }
     // 12. Cleanup is automatic via smart pointers
     rhiDevice->shutdown();
     std::cout << "RHI demonstration complete" << std::endl;
