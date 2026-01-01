@@ -13,6 +13,7 @@ namespace Example {
 void demonstrateRHIUsage() {
     // 1. Create an RHI device (OpenGL in this case)
     auto rhiDevice = createRHIDevice(GraphicsAPI::OpenGL);
+    rhiDevice->initialize();
     if (!rhiDevice) {
         std::cerr << "Failed to create RHI device" << std::endl;
         return;
@@ -206,7 +207,7 @@ void demonstrateRHIUsage() {
 } // namespace CarrotToy
 
 // Uncomment to run the example
-// int main() {
-//     CarrotToy::RHI::Example::demonstrateRHIUsage();
-//     return 0;
-// }
+int main() {
+    CarrotToy::RHI::Example::demonstrateRHIUsage();
+    return 0;
+}

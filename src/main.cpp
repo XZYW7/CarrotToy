@@ -7,7 +7,7 @@
 
 using namespace CarrotToy;
 
-int main() {
+int maint() {
     std::cout << "CarrotToy - Material Editor Lab" << std::endl;
     std::cout << "================================" << std::endl;
     

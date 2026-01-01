@@ -9,7 +9,8 @@
 #include <fstream>
 #include <cstring>
 #include <filesystem>
-#define LOG(X) std::cout << "[MaterialEditor] " << X << std::endl
+#include "CoreUtils.h"
+
 namespace CarrotToy {
 // 新增：从文件加载到 buffer 的小工具
 static void loadFileToBuffer(const std::string& path, char* buf, size_t bufSize) {

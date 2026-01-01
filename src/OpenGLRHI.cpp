@@ -3,7 +3,9 @@
 #include <iostream>
 #include <cstring>
 #include <algorithm>
-
+#include <vector>
+#include "CoreUtils.h"
+#include <GLFW/glfw3.h>
 namespace CarrotToy {
 namespace RHI {
 
@@ -563,11 +565,21 @@ OpenGLRHIDevice::~OpenGLRHIDevice() {
 bool OpenGLRHIDevice::initialize() {
     // OpenGL context should already be initialized by GLFW/GLAD
     // This is just a validation check
+
+    // Initialize GLAD
+    if (!glfwInit()) return false;
+    GLFWwindow* window = glfwCreateWindow(800,600,"RHI Example",nullptr,nullptr);
+    glfwMakeContextCurrent(window);
+
     if (!gladLoadGL()) {
         std::cerr << "Failed to initialize OpenGL RHI" << std::endl;
         return false;
     }
     
+    // if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    //     std::cerr << "Failed to initialize GLAD" << std::endl;
+    //     return false;
+    // }
     initialized = true;
     return true;
 }
@@ -675,19 +687,13 @@ void OpenGLRHIDevice::drawIndexed(PrimitiveTopology topology, uint32_t indexCoun
 
 // Factory function implementation
 std::shared_ptr<IRHIDevice> createRHIDevice(GraphicsAPI api) {
-    switch (api) {
-        case GraphicsAPI::OpenGL:
-            return std::make_shared<OpenGLRHIDevice>();
-        case GraphicsAPI::Vulkan:
-        case GraphicsAPI::DirectX11:
-        case GraphicsAPI::DirectX12:
-        case GraphicsAPI::Metal:
-            std::cerr << "Requested graphics API is not yet implemented" << std::endl;
-            return nullptr;
-        default:
-            return nullptr;
-    }
+    LOG("Creating RHI Device for API: " << static_cast<int>(api));
+    return std::make_shared<OpenGLRHIDevice>();
+
+    return nullptr;
+
 }
+
 
 } // namespace RHI
 } // namespace CarrotToy
