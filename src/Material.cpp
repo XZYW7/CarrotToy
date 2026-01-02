@@ -3,8 +3,72 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 namespace CarrotToy {
+
+// Helper to check file extension
+static bool hasExtension(const std::string& path, const std::string& ext) {
+    if (path.length() < ext.length()) return false;
+    std::string p = path.substr(path.length() - ext.length());
+    std::transform(p.begin(), p.end(), p.begin(), ::tolower);
+    return p == ext;
+}
+
+// Helper to compile SPIR-V shader
+static bool compileSPIRVShader(unsigned int& shader, int type, const std::string& source) {
+    // Check for GL_ARB_gl_spirv extension or OpenGL 4.6+
+    // Note: GLAD_GL_ARB_gl_spirv might be undefined if not generated in glad.h
+    // We assume the user has updated glad configuration to include it.
+#ifdef GL_ARB_gl_spirv
+    if (!GLAD_GL_ARB_gl_spirv) {
+        std::cerr << "GL_ARB_gl_spirv not supported!" << std::endl;
+        return false;
+    }
+#else
+    // Fallback check if GL version is 4.6+ which includes SPIR-V support
+    if (!GLAD_GL_VERSION_4_6) {
+         std::cerr << "OpenGL 4.6 or GL_ARB_gl_spirv not supported!" << std::endl;
+         return false;
+    }
+#endif
+
+    shader = glCreateShader(type);
+    
+#ifdef GL_SHADER_BINARY_FORMAT_SPIR_V
+    GLenum format = GL_SHADER_BINARY_FORMAT_SPIR_V;
+#elif defined(GL_SHADER_BINARY_FORMAT_SPIR_V_ARB)
+    GLenum format = GL_SHADER_BINARY_FORMAT_SPIR_V_ARB;
+#else
+    GLenum format = 0x9551; // Fallback constant
+#endif
+
+    glShaderBinary(1, &shader, format, source.data(), (GLsizei)source.size());
+
+    // Entry point - assuming "VSMain" for vertex and "PSMain" for fragment for HLSL
+    // You should compile your HLSL with:
+    // dxc -T vs_6_0 -E VSMain ...
+    // dxc -T ps_6_0 -E PSMain ...
+    const char* entryPoint = (type == GL_VERTEX_SHADER) ? "VSMain" : "PSMain";
+    
+    // Specialization constants can be passed here if needed
+#ifdef GL_ARB_gl_spirv
+    glSpecializeShaderARB(shader, entryPoint, 0, nullptr, nullptr);
+#else
+    glSpecializeShader(shader, entryPoint, 0, nullptr, nullptr);
+#endif
+
+    int success;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+        std::cerr << "SPIR-V specialization failed: " << infoLog << std::endl;
+        return false;
+    }
+    return true;
+}
 
 // Shader implementation
 Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
@@ -26,29 +90,47 @@ void Shader::use() {
 
 void Shader::reload() {
     // Read shader files
-    std::ifstream vFile(vertexPath);
-    std::ifstream fFile(fragmentPath);
+    auto readFile = [](const std::string& path) -> std::string {
+        bool isBinary = hasExtension(path, ".spv");
+        std::ifstream file(path, isBinary ? (std::ios::binary | std::ios::ate) : std::ios::ate);
+        if (!file.is_open()) return "";
+        std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
+        std::string buffer(size, '\0');
+        if (file.read(&buffer[0], size)) return buffer;
+        return "";
+    };
+
+    std::string vCode = readFile(vertexPath);
+    std::string fCode = readFile(fragmentPath);
     
-    if (!vFile.is_open() || !fFile.is_open()) {
+    if (vCode.empty() || fCode.empty()) {
         std::cerr << "Failed to open shader files: " << vertexPath << ", " << fragmentPath << std::endl;
         return;
     }
     
-    std::stringstream vStream, fStream;
-    vStream << vFile.rdbuf();
-    fStream << fFile.rdbuf();
-    
-    compile(vStream.str(), fStream.str());
+    compile(vCode, fCode);
 }
 
 bool Shader::compile(const std::string& vertexSource, const std::string& fragmentSource) {
     unsigned int vertex, fragment;
+    bool vSuccess, fSuccess;
     
-    if (!compileShader(vertex, GL_VERTEX_SHADER, vertexSource)) {
-        return false;
+    if (hasExtension(vertexPath, ".spv")) {
+        vSuccess = compileSPIRVShader(vertex, GL_VERTEX_SHADER, vertexSource);
+    } else {
+        vSuccess = compileShader(vertex, GL_VERTEX_SHADER, vertexSource);
     }
     
-    if (!compileShader(fragment, GL_FRAGMENT_SHADER, fragmentSource)) {
+    if (!vSuccess) return false;
+    
+    if (hasExtension(fragmentPath, ".spv")) {
+        fSuccess = compileSPIRVShader(fragment, GL_FRAGMENT_SHADER, fragmentSource);
+    } else {
+        fSuccess = compileShader(fragment, GL_FRAGMENT_SHADER, fragmentSource);
+    }
+    
+    if (!fSuccess) {
         glDeleteShader(vertex);
         return false;
     }
