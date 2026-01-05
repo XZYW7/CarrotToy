@@ -4,13 +4,9 @@
 #include <memory>
 #include <map>
 #include <functional>
+#include "Shader.h"
 
 namespace CarrotToy {
-
-// Forward declarations
-class Shader;
-class Material;
-class Renderer;
 
 // Shader parameter types
 enum class ShaderParamType {
@@ -34,38 +30,6 @@ struct ShaderParameter {
         : name(name), type(type), data(data) {}
 };
 
-// Shader class - manages shader compilation and hot-reloading
-class Shader {
-public:
-    Shader(const std::string& vertexPath, const std::string& fragmentPath);
-    ~Shader();
-    
-    void use();
-    void reload();
-    bool compile(const std::string& vertexSource, const std::string& fragmentSource);
-    
-    unsigned int getID() const { return programID; }
-    
-    // Uniform setters
-    void setFloat(const std::string& name, float value);
-    void setVec2(const std::string& name, float x, float y);
-    void setVec3(const std::string& name, float x, float y, float z);
-    void setVec4(const std::string& name, float x, float y, float z, float w);
-    void setInt(const std::string& name, int value);
-    void setBool(const std::string& name, bool value);
-    void setMatrix4(const std::string& name, const float* value);
-
-    std::string getVertexPath() const { return vertexPath; }
-    std::string getFragmentPath() const { return fragmentPath; }
-    
-private:
-    unsigned int programID;
-    std::string vertexPath;
-    std::string fragmentPath;
-    
-    bool compileShader(unsigned int& shader, int type, const std::string& source);
-    bool linkProgram(unsigned int vertex, unsigned int fragment);
-};
 
 // Material class - represents a material with shader and parameters
 class Material {
