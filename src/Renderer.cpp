@@ -7,7 +7,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <cmath>
-
 namespace CarrotToy {
 
 static void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
@@ -35,8 +34,8 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
         return false;
     }
     
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
 #ifdef __APPLE__
@@ -58,7 +57,7 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         return false;
     }
-    
+
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
     
@@ -112,6 +111,13 @@ void Renderer::renderMaterialPreview(std::shared_ptr<Material> material) {
     shader->setMatrix4("view", glm::value_ptr(view));
     shader->setMatrix4("projection", glm::value_ptr(projection));
     shader->setMatrix4("model", glm::value_ptr(model));
+    // Upload simple lighting / camera data expected by the shader's LightData cbuffer
+    // These names (lightPos, lightColor, viewPos) are matched against the UBO cache
+    // and will write into the LightData uniform block if present.
+    shader->setVec3("lightPos", 10.0f, 10.0f, 0.0f);
+    shader->setVec3("lightColor", 100.0f, 100.0f, 100.0f);
+    // view position is the camera world-space position used above in glm::lookAt
+    shader->setVec3("viewPos", 0.0f, 0.0f, 3.0f);
     
     // Render sphere
     if (sphereVAO) {

@@ -225,7 +225,7 @@ void demonstrateRHIUsage() {
 } // namespace CarrotToy
 
 // Uncomment to run the example
-int main() {
+int man() {
     CarrotToy::RHI::Example::demonstrateRHIUsage();
     return 0;
 }

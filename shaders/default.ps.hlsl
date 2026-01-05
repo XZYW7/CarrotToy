@@ -90,8 +90,8 @@ float4 PSMain(PSInput input) : SV_Target
     float NdotL = max(dot(N, L), 0.0);
     float3 Lo = (kD * albedo / PI + specular) * radiance * NdotL;
 
-    float3 ambient = float3(0.03, 0.03, 0.03) * albedo;
-    float3 color = ambient + Lo;
+    // float3 ambient = float3(0.03, 0.03, 0.03) * albedo;
+    float3 color = Lo;
 
     // tone mapping
     color = color / (color + float3(1.0,1.0,1.0));

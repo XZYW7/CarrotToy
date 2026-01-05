@@ -7,7 +7,7 @@
 
 using namespace CarrotToy;
 
-int maint() {
+int main() {
     std::cout << "CarrotToy - Material Editor Lab" << std::endl;
     std::cout << "================================" << std::endl;
     
@@ -22,8 +22,8 @@ int maint() {
     
     // Create default shader
     auto defaultShader = std::make_shared<Shader>(
-        "shaders/default.vert",
-        "shaders/default.frag"
+        "shaders/default.vs.spv",
+        "shaders/default.ps.spv"
     );
     
     // Create default material
