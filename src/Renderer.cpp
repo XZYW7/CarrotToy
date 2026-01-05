@@ -108,16 +108,12 @@ void Renderer::renderMaterialPreview(std::shared_ptr<Material> material) {
     model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
     
     auto shader = material->getShader();
-    shader->setMatrix4("view", glm::value_ptr(view));
-    shader->setMatrix4("projection", glm::value_ptr(projection));
-    shader->setMatrix4("model", glm::value_ptr(model));
-    // Upload simple lighting / camera data expected by the shader's LightData cbuffer
-    // These names (lightPos, lightColor, viewPos) are matched against the UBO cache
-    // and will write into the LightData uniform block if present.
-    shader->setVec3("lightPos", 10.0f, 10.0f, 0.0f);
-    shader->setVec3("lightColor", 100.0f, 100.0f, 100.0f);
-    // view position is the camera world-space position used above in glm::lookAt
-    shader->setVec3("viewPos", 0.0f, 0.0f, 3.0f);
+    // Use typed helpers to upload per-frame matrices and light/camera data
+    shader->setPerFrameMatrices(glm::value_ptr(model), glm::value_ptr(view), glm::value_ptr(projection));
+    float lightPos[3] = {10.0f, 10.0f, 0.0f};
+    float lightColor[3] = {100.0f, 100.0f, 100.0f};
+    float viewPos[3] = {0.0f, 0.0f, 3.0f};
+    shader->setLightData(lightPos, lightColor, viewPos);
     
     // Render sphere
     if (sphereVAO) {

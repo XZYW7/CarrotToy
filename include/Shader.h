@@ -41,6 +41,9 @@ public:
     void setInt(const std::string& name, int value);
     void setBool(const std::string& name, bool value);
     void setMatrix4(const std::string& name, const float* value);
+    // High-level convenience uploads (typed, avoid relying on string names everywhere)
+    void setPerFrameMatrices(const float* model, const float* view, const float* projection);
+    void setLightData(const float* lightPos, const float* lightColor, const float* viewPos);
 
     std::string getVertexPath() const { return vertexPath; }
     std::string getFragmentPath() const { return fragmentPath; }

@@ -27,6 +27,8 @@ public:
     virtual std::shared_ptr<IRHITexture> createTexture(const TextureDesc& desc) = 0;
     virtual std::shared_ptr<IRHIFramebuffer> createFramebuffer(const FramebufferDesc& desc) = 0;
     virtual std::shared_ptr<IRHIVertexArray> createVertexArray() = 0;
+    // Create a uniform buffer object (size in bytes) and bind it to a binding index
+    virtual std::shared_ptr<class IRHIUniformBuffer> createUniformBuffer(size_t size, uint32_t binding) = 0;
     
     // Rendering state
     virtual void setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) = 0;

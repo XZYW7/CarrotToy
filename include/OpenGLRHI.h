@@ -197,6 +197,7 @@ public:
     std::shared_ptr<IRHITexture> createTexture(const TextureDesc& desc) override;
     std::shared_ptr<IRHIFramebuffer> createFramebuffer(const FramebufferDesc& desc) override;
     std::shared_ptr<IRHIVertexArray> createVertexArray() override;
+    std::shared_ptr<IRHIUniformBuffer> createUniformBuffer(size_t size, uint32_t binding) override;
     
     // Rendering state
     void setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;

@@ -592,6 +592,67 @@ std::shared_ptr<IRHIBuffer> OpenGLRHIDevice::createBuffer(const BufferDesc& desc
     return std::make_shared<OpenGLBuffer>(desc);
 }
 
+// OpenGLUniformBuffer - implements IRHIUniformBuffer
+class OpenGLUniformBuffer : public IRHIUniformBuffer {
+public:
+    OpenGLUniformBuffer() : ubo(0), sizeBytes(0), binding(0) {}
+    OpenGLUniformBuffer(size_t size, uint32_t bind) : ubo(0), sizeBytes(0), binding(bind) { create(size, bind); }
+    ~OpenGLUniformBuffer() { release(); }
+
+    bool create(size_t size, uint32_t bind) {
+        release();
+        sizeBytes = size;
+        binding = bind;
+        glGenBuffers(1, &ubo);
+        if (!ubo) return false;
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+        glBufferData(GL_UNIFORM_BUFFER, (GLsizeiptr)sizeBytes, nullptr, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        // bind to binding point
+        glBindBufferBase(GL_UNIFORM_BUFFER, binding, ubo);
+        return true;
+    }
+
+    void update(const void* data, size_t size, size_t offset = 0) override {
+        if (!ubo) return;
+        if (offset + size > sizeBytes) {
+            std::cerr << "UniformBuffer::update out of range" << std::endl;
+            return;
+        }
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+        glBufferSubData(GL_UNIFORM_BUFFER, (GLintptr)offset, (GLsizeiptr)size, data);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+
+    void bind(uint32_t b) override {
+        if (!ubo) return;
+        binding = b;
+        glBindBufferBase(GL_UNIFORM_BUFFER, binding, ubo);
+    }
+
+    size_t getSize() const override { return sizeBytes; }
+
+    bool isValid() const override { return ubo != 0; }
+    void release() override {
+        if (ubo) {
+            glDeleteBuffers(1, &ubo);
+            ubo = 0;
+        }
+        sizeBytes = 0;
+    }
+
+private:
+    GLuint ubo;
+    size_t sizeBytes;
+    uint32_t binding;
+};
+
+std::shared_ptr<IRHIUniformBuffer> OpenGLRHIDevice::createUniformBuffer(size_t size, uint32_t binding) {
+    auto ub = std::make_shared<OpenGLUniformBuffer>();
+    if (!ub->create(size, binding)) return nullptr;
+    return ub;
+}
+
 std::shared_ptr<IRHIShader> OpenGLRHIDevice::createShader(const ShaderDesc& desc) {
     return std::make_shared<OpenGLShader>(desc);
 }

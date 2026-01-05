@@ -30,6 +30,20 @@ public:
     virtual BufferType getType() const = 0;
 };
 
+// Uniform buffer interface (typed wrapper for UBOs)
+class IRHIUniformBuffer : public IRHIResource {
+public:
+    virtual ~IRHIUniformBuffer() = default;
+
+    // Update contiguous data into the UBO
+    virtual void update(const void* data, size_t size, size_t offset = 0) = 0;
+
+    // Bind the buffer to the given binding point (makes sure binding point is occupied)
+    virtual void bind(uint32_t binding) = 0;
+
+    virtual size_t getSize() const = 0;
+};
+
 // Shader interface
 class IRHIShader : public IRHIResource {
 public:

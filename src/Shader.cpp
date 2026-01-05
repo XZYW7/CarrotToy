@@ -368,4 +368,17 @@ void Shader::setMatrix4(const std::string& name, const float* value) {
     TRY_SET_UBO(name, value, sizeof(float) * 16);
 }
 
+void Shader::setPerFrameMatrices(const float* model, const float* view, const float* projection) {
+    // High-level convenience: try to set as regular uniforms first, fall back to UBO fields
+    setMatrix4("model", model);
+    setMatrix4("view", view);
+    setMatrix4("projection", projection);
+}
+
+void Shader::setLightData(const float* lightPos, const float* lightColor, const float* viewPos) {
+    setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
+    setVec3("lightColor", lightColor[0], lightColor[1], lightColor[2]);
+    setVec3("viewPos", viewPos[0], viewPos[1], viewPos[2]);
+}
+
 } // namespace CarrotToy
