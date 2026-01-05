@@ -78,11 +78,8 @@ Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
 
 Shader::~Shader() {
     if (programID != 0) {
+        // RHI owns uniform buffer lifetimes; just remove the program cache entry.
         if (g_ProgramUBOs.count(programID)) {
-            auto& ids = g_ProgramUBOs[programID].uboIDs;
-            if (!ids.empty()) {
-                glDeleteBuffers((GLsizei)ids.size(), ids.data());
-            }
             g_ProgramUBOs.erase(programID);
         }
         glDeleteProgram(programID);
@@ -92,15 +89,8 @@ Shader::~Shader() {
 void Shader::use() {
     if (programID != 0) {
         glUseProgram(programID);
-
-        // Restore UBO bindings
-        if (g_ProgramUBOs.count(programID)) {
-            const auto& ids = g_ProgramUBOs[programID].uboIDs;
-            for (size_t i = 0; i < ids.size(); ++i) {
-                // If ids[i] == 0 it means an RHI-backed UBO was created and bound elsewhere; don't override it
-                if (ids[i] != 0) glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)i, ids[i]);
-            }
-        }
+        // RHI-backed UBOs are bound and managed by the RHI implementation. Do not perform
+        // GL-side buffer binding or attempt to manage native handles here.
     }
 }
 
@@ -198,17 +188,20 @@ bool Shader::compile(const std::string& vertexSource, const std::string& fragmen
         // Bind the block to the chosen binding point for this program
         glUniformBlockBinding(newProgramID, blockIndex, (GLint)bindingPoint);
 
-        // Allocate a UBO sized for the block and bind it to the binding point
+        // Allocate a UBO sized for the block. We require the RHI to create and manage the buffer.
         GLint blockSize = 0;
         glGetActiveUniformBlockiv(newProgramID, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
 
-        GLuint ubo = 0;
-        // If an RHI device is available, prefer creating an RHI-backed UBO which will create and bind
-        // the native buffer for us. In that case we skip creating a separate GL buffer to avoid duplication.
         auto rhiDev = CarrotToy::RHI::getGlobalDevice();
+        if (!rhiDev) {
+            std::cerr << "Shader reflection: no global RHI device available - UBOs will not be created for block '" << blockName << "'." << std::endl;
+        }
+
         if (rhiDev && blockSize > 0) {
             auto rhiUB = rhiDev->createUniformBuffer((size_t)blockSize, bindingPoint);
-            if (rhiUB) {
+            if (!rhiUB) {
+                std::cerr << "RHI failed to create UBO for block '" << blockName << "' (binding " << bindingPoint << ")" << std::endl;
+            } else {
                 std::string bname(blockName);
                 if (bname.find("PerFrame") != std::string::npos || bname.find("PerFrame") == 0) {
                     perFrameUBO = rhiUB;
@@ -221,34 +214,12 @@ bool Shader::compile(const std::string& vertexSource, const std::string& fragmen
                     materialUBOSize = (size_t)blockSize;
                 }
 
-                // store native handle from RHI (if available) into cache so Shader::use can bind it
+                // store native handle from RHI into cache (if provided). Shader no longer performs GL fallback binding.
                 uintptr_t native = rhiUB->getNativeHandle();
                 if (cache.uboIDs.size() <= bindingPoint) cache.uboIDs.resize(bindingPoint + 1);
                 cache.uboIDs[bindingPoint] = (GLuint)native;
                 blockUBOs[blockIndex] = (GLuint)native;
-            } else {
-                // RHI failed to create UBO; fall back to GL buffer
-                glGenBuffers(1, &ubo);
-                glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-                glBufferData(GL_UNIFORM_BUFFER, blockSize, nullptr, GL_DYNAMIC_DRAW);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
-                glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ubo);
-                if (cache.uboIDs.size() <= bindingPoint) cache.uboIDs.resize(bindingPoint + 1);
-                cache.uboIDs[bindingPoint] = ubo;
-                blockUBOs[blockIndex] = ubo;
             }
-        } else {
-            if (blockSize > 0) {
-                glGenBuffers(1, &ubo);
-                glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-                glBufferData(GL_UNIFORM_BUFFER, blockSize, nullptr, GL_DYNAMIC_DRAW);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
-                glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ubo);
-
-                if (cache.uboIDs.size() <= bindingPoint) cache.uboIDs.resize(bindingPoint + 1);
-                cache.uboIDs[bindingPoint] = ubo;
-            }
-            blockUBOs[blockIndex] = ubo;
         }
 
         std::cout << "Initialized UBO: " << blockName << " (BlockIndex: " << blockIndex << " -> Binding: " << bindingPoint << ", Size: " << blockSize << ")" << std::endl;
