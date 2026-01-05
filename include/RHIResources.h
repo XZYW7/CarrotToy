@@ -42,6 +42,8 @@ public:
     virtual void bind(uint32_t binding) = 0;
 
     virtual size_t getSize() const = 0;
+    // Optional native handle accessor (returns 0 if not available)
+    virtual uintptr_t getNativeHandle() const { return 0; }
 };
 
 // Shader interface

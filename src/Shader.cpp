@@ -2,6 +2,9 @@
 #include "CoreUtils.h"
 #include <fstream>
 #include <algorithm>
+#include "RHI.h"
+#include <vector>
+#include <cstring>
 
 namespace CarrotToy {
 
@@ -94,7 +97,8 @@ void Shader::use() {
         if (g_ProgramUBOs.count(programID)) {
             const auto& ids = g_ProgramUBOs[programID].uboIDs;
             for (size_t i = 0; i < ids.size(); ++i) {
-                glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)i, ids[i]);
+                // If ids[i] == 0 it means an RHI-backed UBO was created and bound elsewhere; don't override it
+                if (ids[i] != 0) glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)i, ids[i]);
             }
         }
     }
@@ -199,17 +203,53 @@ bool Shader::compile(const std::string& vertexSource, const std::string& fragmen
         glGetActiveUniformBlockiv(newProgramID, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
 
         GLuint ubo = 0;
-        if (blockSize > 0) {
-            glGenBuffers(1, &ubo);
-            glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-            glBufferData(GL_UNIFORM_BUFFER, blockSize, nullptr, GL_DYNAMIC_DRAW);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-            glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ubo);
+        // If an RHI device is available, prefer creating an RHI-backed UBO which will create and bind
+        // the native buffer for us. In that case we skip creating a separate GL buffer to avoid duplication.
+        auto rhiDev = CarrotToy::RHI::getGlobalDevice();
+        if (rhiDev && blockSize > 0) {
+            auto rhiUB = rhiDev->createUniformBuffer((size_t)blockSize, bindingPoint);
+            if (rhiUB) {
+                std::string bname(blockName);
+                if (bname.find("PerFrame") != std::string::npos || bname.find("PerFrame") == 0) {
+                    perFrameUBO = rhiUB;
+                    perFrameUBOSize = (size_t)blockSize;
+                } else if (bname.find("LightData") != std::string::npos || bname.find("Light") != std::string::npos) {
+                    lightUBO = rhiUB;
+                    lightUBOSize = (size_t)blockSize;
+                } else if (bname.find("Material") != std::string::npos) {
+                    materialUBO = rhiUB;
+                    materialUBOSize = (size_t)blockSize;
+                }
 
-            if (cache.uboIDs.size() <= bindingPoint) cache.uboIDs.resize(bindingPoint + 1);
-            cache.uboIDs[bindingPoint] = ubo;
+                // store native handle from RHI (if available) into cache so Shader::use can bind it
+                uintptr_t native = rhiUB->getNativeHandle();
+                if (cache.uboIDs.size() <= bindingPoint) cache.uboIDs.resize(bindingPoint + 1);
+                cache.uboIDs[bindingPoint] = (GLuint)native;
+                blockUBOs[blockIndex] = (GLuint)native;
+            } else {
+                // RHI failed to create UBO; fall back to GL buffer
+                glGenBuffers(1, &ubo);
+                glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+                glBufferData(GL_UNIFORM_BUFFER, blockSize, nullptr, GL_DYNAMIC_DRAW);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+                glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ubo);
+                if (cache.uboIDs.size() <= bindingPoint) cache.uboIDs.resize(bindingPoint + 1);
+                cache.uboIDs[bindingPoint] = ubo;
+                blockUBOs[blockIndex] = ubo;
+            }
+        } else {
+            if (blockSize > 0) {
+                glGenBuffers(1, &ubo);
+                glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+                glBufferData(GL_UNIFORM_BUFFER, blockSize, nullptr, GL_DYNAMIC_DRAW);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+                glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ubo);
+
+                if (cache.uboIDs.size() <= bindingPoint) cache.uboIDs.resize(bindingPoint + 1);
+                cache.uboIDs[bindingPoint] = ubo;
+            }
+            blockUBOs[blockIndex] = ubo;
         }
-        blockUBOs[blockIndex] = ubo;
 
         std::cout << "Initialized UBO: " << blockName << " (BlockIndex: " << blockIndex << " -> Binding: " << bindingPoint << ", Size: " << blockSize << ")" << std::endl;
     }
@@ -235,7 +275,8 @@ bool Shader::compile(const std::string& vertexSource, const std::string& fragmen
         if (offset < 0) continue;
 
         GLuint uboID = blockUBOs[blockIndex];
-        if (uboID == 0) continue; // no buffer allocated for this block
+        // Even if uboID == 0 (RHI-managed buffer), still cache the variable offset so
+        // we can pack into the RHI buffer using the discovered offset. Do not skip here.
 
         auto store = [&](const std::string& key){ cache.vars[key] = {uboID, offset}; };
         store(fullName);
@@ -308,77 +349,165 @@ bool Shader::linkProgram(unsigned int vertex, unsigned int fragment) {
     return true;
 }
 
-// Helper macro for UBO fallback
-#define TRY_SET_UBO(name, dataPtr, dataSize) \
-    if (g_ProgramUBOs.count(programID)) { \
-        auto& cache = g_ProgramUBOs[programID]; \
-        if (cache.vars.count(name)) { \
-            auto& var = cache.vars[name]; \
-            glBindBuffer(GL_UNIFORM_BUFFER, var.uboID); \
-            glBufferSubData(GL_UNIFORM_BUFFER, var.offset, dataSize, dataPtr); \
-            glBindBuffer(GL_UNIFORM_BUFFER, 0); \
-            return; \
-        } \
-    }
-
+// Uniform setters — do not perform legacy UBO-by-name fallbacks; callers should use typed UBO helpers
 void Shader::setFloat(const std::string& name, float value) {
     GLint loc = glGetUniformLocation(programID, name.c_str());
-    if (loc != -1) { glUniform1f(loc, value); return; }
-    TRY_SET_UBO(name, &value, sizeof(float));
+    if (loc != -1) { glUniform1f(loc, value); }
 }
 
 void Shader::setVec2(const std::string& name, float x, float y) {
     GLint loc = glGetUniformLocation(programID, name.c_str());
-    if (loc != -1) { glUniform2f(loc, x, y); return; }
-    float data[2] = {x, y};
-    TRY_SET_UBO(name, data, sizeof(data));
+    if (loc != -1) { glUniform2f(loc, x, y); }
 }
 
 void Shader::setVec3(const std::string& name, float x, float y, float z) {
     GLint loc = glGetUniformLocation(programID, name.c_str());
-    if (loc != -1) { glUniform3f(loc, x, y, z); return; }
-    float data[3] = {x, y, z};
-    TRY_SET_UBO(name, data, sizeof(data));
+    if (loc != -1) { glUniform3f(loc, x, y, z); }
 }
 
 void Shader::setVec4(const std::string& name, float x, float y, float z, float w) {
     GLint loc = glGetUniformLocation(programID, name.c_str());
-    if (loc != -1) { glUniform4f(loc, x, y, z, w); return; }
-    float data[4] = {x, y, z, w};
-    TRY_SET_UBO(name, data, sizeof(data));
+    if (loc != -1) { glUniform4f(loc, x, y, z, w); }
 }
 
 void Shader::setInt(const std::string& name, int value) {
     GLint loc = glGetUniformLocation(programID, name.c_str());
-    if (loc != -1) { glUniform1i(loc, value); return; }
-    TRY_SET_UBO(name, &value, sizeof(int));
+    if (loc != -1) { glUniform1i(loc, value); }
 }
 
 void Shader::setBool(const std::string& name, bool value) {
     GLint loc = glGetUniformLocation(programID, name.c_str());
-    if (loc != -1) { glUniform1i(loc, value ? 1 : 0); return; }
-    // HLSL bool in cbuffer is 4 bytes (int)
-    int data = value ? 1 : 0;
-    TRY_SET_UBO(name, &data, sizeof(int));
+    if (loc != -1) { glUniform1i(loc, value ? 1 : 0); }
 }
 
 void Shader::setMatrix4(const std::string& name, const float* value) {
     GLint loc = glGetUniformLocation(programID, name.c_str());
-    if (loc != -1) { glUniformMatrix4fv(loc, 1, GL_FALSE, value); return; }
-    TRY_SET_UBO(name, value, sizeof(float) * 16);
+    if (loc != -1) { glUniformMatrix4fv(loc, 1, GL_FALSE, value); }
 }
 
 void Shader::setPerFrameMatrices(const float* model, const float* view, const float* projection) {
-    // High-level convenience: try to set as regular uniforms first, fall back to UBO fields
+    // If we have a typed RHI-backed PerFrame UBO, assemble a full block and update it in one call.
+    if (perFrameUBO && perFrameUBO->isValid() && perFrameUBOSize > 0) {
+        std::vector<unsigned char> block(perFrameUBOSize);
+        if (g_ProgramUBOs.count(programID)) {
+            auto& cache = g_ProgramUBOs[programID];
+            auto findOffset = [&](const std::string& field) -> GLint {
+                // exact match
+                auto it = cache.vars.find(field);
+                if (it != cache.vars.end()) return it->second.offset;
+                // .suffix match
+                std::string dot = std::string(".") + field;
+                for (const auto& kv : cache.vars) {
+                    if (kv.first.size() > dot.size() && kv.first.compare(kv.first.size() - dot.size(), dot.size(), dot) == 0) {
+                        return kv.second.offset;
+                    }
+                }
+                // fallback: ends with field
+                for (const auto& kv : cache.vars) {
+                    if (kv.first.size() >= field.size() && kv.first.compare(kv.first.size() - field.size(), field.size(), field) == 0) {
+                        return kv.second.offset;
+                    }
+                }
+                return -1;
+            };
+
+            GLint offModel = findOffset("model");
+            if (offModel >= 0) memcpy(block.data() + offModel, model, sizeof(float) * 16);
+            GLint offView = findOffset("view");
+            if (offView >= 0) memcpy(block.data() + offView, view, sizeof(float) * 16);
+            GLint offProj = findOffset("projection");
+            if (offProj >= 0) memcpy(block.data() + offProj, projection, sizeof(float) * 16);
+        } else {
+            // Best-effort contiguous layout: model, view, projection
+            memcpy(block.data(), model, sizeof(float) * 16);
+            memcpy(block.data() + sizeof(float) * 16, view, sizeof(float) * 16);
+            memcpy(block.data() + sizeof(float) * 32, projection, sizeof(float) * 16);
+        }
+
+        perFrameUBO->update(block.data(), block.size(), 0);
+        return;
+    }
+
+    // Fallback to uniforms (no legacy UBO-by-name support here)
     setMatrix4("model", model);
     setMatrix4("view", view);
     setMatrix4("projection", projection);
 }
 
 void Shader::setLightData(const float* lightPos, const float* lightColor, const float* viewPos) {
+    if (lightUBO && lightUBO->isValid() && lightUBOSize > 0) {
+        std::vector<unsigned char> block(lightUBOSize);
+        if (g_ProgramUBOs.count(programID)) {
+            auto& cache = g_ProgramUBOs[programID];
+            auto findOffset = [&](const std::string& field) -> GLint {
+                auto it = cache.vars.find(field);
+                if (it != cache.vars.end()) return it->second.offset;
+                std::string dot = std::string(".") + field;
+                for (const auto& kv : cache.vars) {
+                    if (kv.first.size() > dot.size() && kv.first.compare(kv.first.size() - dot.size(), dot.size(), dot) == 0) {
+                        return kv.second.offset;
+                    }
+                }
+                for (const auto& kv : cache.vars) {
+                    if (kv.first.size() >= field.size() && kv.first.compare(kv.first.size() - field.size(), field.size(), field) == 0) {
+                        return kv.second.offset;
+                    }
+                }
+                return -1;
+            };
+
+            GLint offLP = findOffset("lightPos");
+            if (offLP >= 0) memcpy(block.data() + offLP, lightPos, sizeof(float) * 3);
+            GLint offLC = findOffset("lightColor");
+            if (offLC >= 0) memcpy(block.data() + offLC, lightColor, sizeof(float) * 3);
+            GLint offVP = findOffset("viewPos");
+            if (offVP >= 0) memcpy(block.data() + offVP, viewPos, sizeof(float) * 3);
+        } else {
+            memcpy(block.data(), lightPos, sizeof(float) * 3);
+            memcpy(block.data() + sizeof(float) * 4, lightColor, sizeof(float) * 3);
+            memcpy(block.data() + sizeof(float) * 8, viewPos, sizeof(float) * 3);
+        }
+
+        lightUBO->update(block.data(), block.size(), 0);
+        return;
+    }
+
+    // Fallback to setting uniforms directly
     setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
     setVec3("lightColor", lightColor[0], lightColor[1], lightColor[2]);
     setVec3("viewPos", viewPos[0], viewPos[1], viewPos[2]);
+}
+
+// Public utility: update material block directly (used by Material::bind)
+void Shader::updateMaterialBlock(const void* data, size_t size) {
+    if (materialUBO && materialUBO->isValid() && materialUBOSize >= size) {
+        materialUBO->update(data, size, 0);
+    } else {
+        // If no material UBO exists, we intentionally do not perform legacy UBO-by-name updates.
+        LOG("updateMaterialBlock: no material UBO available for program " << programID);
+    }
+}
+
+GLint Shader::getUBOOffset(const std::string& field) const {
+    if (!g_ProgramUBOs.count(programID)) return -1;
+    const auto& cache = g_ProgramUBOs.at(programID);
+    // exact
+    auto it = cache.vars.find(field);
+    if (it != cache.vars.end()) return it->second.offset;
+    // dot-suffix
+    std::string dot = std::string(".") + field;
+    for (const auto& kv : cache.vars) {
+        if (kv.first.size() > dot.size() && kv.first.compare(kv.first.size() - dot.size(), dot.size(), dot) == 0) {
+            return kv.second.offset;
+        }
+    }
+    // ends-with
+    for (const auto& kv : cache.vars) {
+        if (kv.first.size() >= field.size() && kv.first.compare(kv.first.size() - field.size(), field.size(), field) == 0) {
+            return kv.second.offset;
+        }
+    }
+    return -1;
 }
 
 } // namespace CarrotToy

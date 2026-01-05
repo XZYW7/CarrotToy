@@ -28,6 +28,13 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     width = w;
     height = h;
     
+    // Create and register a global RHI device (OpenGL backend). We don't call device->initialize()
+    // because the GL context & loader are already created by the renderer; the RHI implementation
+    // relies on an active context for creating GL resources.
+    auto rhiDevice = CarrotToy::RHI::createRHIDevice(CarrotToy::RHI::GraphicsAPI::OpenGL);
+    if (rhiDevice) {
+        CarrotToy::RHI::setGlobalDevice(rhiDevice);
+    }
     // Initialize GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;

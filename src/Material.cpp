@@ -46,31 +46,70 @@ Material::~Material() {
 void Material::bind() {
     if (shader) {
         shader->use();
-        
-        // Apply all parameters
-        for (auto& [name, param] : parameters) {
-            switch (param.type) {
-                case ShaderParamType::Float:
-                    shader->setFloat(name, *(float*)param.data);
-                    break;
-                case ShaderParamType::Vec3: {
-                    float* vec = (float*)param.data;
-                    shader->setVec3(name, vec[0], vec[1], vec[2]);
-                    break;
+
+        // If the shader exposes a Material UBO, pack all parameters into the UBO block and upload in one call
+        size_t mSize = shader->getMaterialUBOSize();
+        if (mSize > 0) {
+            std::vector<unsigned char> block(mSize);
+            for (auto& kv : parameters) {
+                const std::string& pname = kv.first;
+                auto& param = kv.second;
+                GLint off = shader->getUBOOffset(pname);
+                if (off < 0) continue; // not part of material block
+
+                switch (param.type) {
+                    case ShaderParamType::Float:
+                        memcpy(block.data() + off, param.data, sizeof(float));
+                        break;
+                    case ShaderParamType::Vec3:
+                        memcpy(block.data() + off, param.data, sizeof(float) * 3);
+                        break;
+                    case ShaderParamType::Vec4:
+                        memcpy(block.data() + off, param.data, sizeof(float) * 4);
+                        break;
+                    case ShaderParamType::Int:
+                        memcpy(block.data() + off, param.data, sizeof(int));
+                        break;
+                    case ShaderParamType::Bool: {
+                        int iv = (*(bool*)param.data) ? 1 : 0;
+                        memcpy(block.data() + off, &iv, sizeof(int));
+                        break;
+                    }
+                    case ShaderParamType::Matrix4:
+                        memcpy(block.data() + off, param.data, sizeof(float) * 16);
+                        break;
+                    default:
+                        // textures and unsupported types are ignored for UBO packing
+                        break;
                 }
-                case ShaderParamType::Vec4: {
-                    float* vec = (float*)param.data;
-                    shader->setVec4(name, vec[0], vec[1], vec[2], vec[3]);
-                    break;
+            }
+            shader->updateMaterialBlock(block.data(), block.size());
+        } else {
+            // No material UBO: fall back to setting uniforms directly (uniforms only, no UBO-by-name writes)
+            for (auto& [name, param] : parameters) {
+                switch (param.type) {
+                    case ShaderParamType::Float:
+                        shader->setFloat(name, *(float*)param.data);
+                        break;
+                    case ShaderParamType::Vec3: {
+                        float* vec = (float*)param.data;
+                        shader->setVec3(name, vec[0], vec[1], vec[2]);
+                        break;
+                    }
+                    case ShaderParamType::Vec4: {
+                        float* vec = (float*)param.data;
+                        shader->setVec4(name, vec[0], vec[1], vec[2], vec[3]);
+                        break;
+                    }
+                    case ShaderParamType::Int:
+                        shader->setInt(name, *(int*)param.data);
+                        break;
+                    case ShaderParamType::Bool:
+                        shader->setBool(name, *(bool*)param.data);
+                        break;
+                    default:
+                        break;
                 }
-                case ShaderParamType::Int:
-                    shader->setInt(name, *(int*)param.data);
-                    break;
-                case ShaderParamType::Bool:
-                    shader->setBool(name, *(bool*)param.data);
-                    break;
-                default:
-                    break;
             }
         }
     }

@@ -5,6 +5,8 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <memory>
+#include "RHI.h"
 
 namespace CarrotToy {
 // --- 通用 UBO 缓存结构 ---
@@ -44,6 +46,11 @@ public:
     // High-level convenience uploads (typed, avoid relying on string names everywhere)
     void setPerFrameMatrices(const float* model, const float* view, const float* projection);
     void setLightData(const float* lightPos, const float* lightColor, const float* viewPos);
+    // Material block helpers
+    size_t getMaterialUBOSize() const { return materialUBOSize; }
+    void updateMaterialBlock(const void* data, size_t size);
+    // Query existing cached UBO offset (from reflection) for a given field name
+    GLint getUBOOffset(const std::string& field) const;
 
     std::string getVertexPath() const { return vertexPath; }
     std::string getFragmentPath() const { return fragmentPath; }
@@ -52,6 +59,13 @@ private:
     unsigned int programID;
     std::string vertexPath;
     std::string fragmentPath;
+    // Optional RHI-backed uniform buffers for faster/typed uploads
+    std::shared_ptr<CarrotToy::RHI::IRHIUniformBuffer> perFrameUBO;
+    std::shared_ptr<CarrotToy::RHI::IRHIUniformBuffer> lightUBO;
+    size_t perFrameUBOSize = 0;
+    size_t lightUBOSize = 0;
+    std::shared_ptr<CarrotToy::RHI::IRHIUniformBuffer> materialUBO;
+    size_t materialUBOSize = 0;
     
     bool compileShader(unsigned int& shader, int type, const std::string& source);
     bool linkProgram(unsigned int vertex, unsigned int fragment);

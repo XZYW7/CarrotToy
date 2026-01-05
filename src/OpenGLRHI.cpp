@@ -641,6 +641,8 @@ public:
         sizeBytes = 0;
     }
 
+    uintptr_t getNativeHandle() const override { return (uintptr_t)ubo; }
+
 private:
     GLuint ubo;
     size_t sizeBytes;
@@ -753,6 +755,17 @@ std::shared_ptr<IRHIDevice> createRHIDevice(GraphicsAPI api) {
 
     return nullptr;
 
+}
+
+// Global RHI device instance for convenience
+static std::shared_ptr<IRHIDevice> g_globalDevice = nullptr;
+
+void setGlobalDevice(std::shared_ptr<IRHIDevice> device) {
+    g_globalDevice = device;
+}
+
+std::shared_ptr<IRHIDevice> getGlobalDevice() {
+    return g_globalDevice;
 }
 
 

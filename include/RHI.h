@@ -57,5 +57,9 @@ public:
 // Factory function to create RHI device based on API type
 std::shared_ptr<IRHIDevice> createRHIDevice(GraphicsAPI api);
 
+// Global device accessors (convenience for high-level systems)
+void setGlobalDevice(std::shared_ptr<IRHIDevice> device);
+std::shared_ptr<IRHIDevice> getGlobalDevice();
+
 } // namespace RHI
 } // namespace CarrotToy
