@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <string>
-#include "Platform.h"
+#include "Platform/Platform.h"
 
 namespace CarrotToy {
 

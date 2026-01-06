@@ -20,8 +20,8 @@ add_requires("imgui", {
 target("CarrotToy")
     set_kind("binary")
     add_files("src/**.cpp")
-    add_headerfiles("src/Public/**.h")
-    add_includedirs("src/Public")
+    add_headerfiles("src/Runtime/Public/**.h")
+    add_includedirs("src/Runtime/Public")
     
     -- Link required packages
     add_packages("glfw", "glad", "glm", "imgui", "stb", "directxshadercompiler")

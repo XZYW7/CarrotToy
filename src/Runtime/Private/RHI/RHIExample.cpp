@@ -1,6 +1,6 @@
-#include "RHI.h"
-#include "OpenGLRHI.h"
-#include "Platform.h"
+#include "RHI/RHI.h"
+#include "RHI/OpenGLRHI.h"
+#include "Platform/Platform.h"
 #include <iostream>
 #include <cstring>
 #include <thread>

@@ -6,7 +6,7 @@
 #include <set>
 #include <map>
 #include <memory>
-#include "RHI.h"
+#include "RHI/RHI.h"
 
 namespace CarrotToy {
 // --- 通用 UBO 缓存结构 ---

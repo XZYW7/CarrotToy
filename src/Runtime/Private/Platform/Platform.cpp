@@ -1,4 +1,4 @@
-#include "Platform.h"
+#include "Platform/Platform.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <stdexcept>

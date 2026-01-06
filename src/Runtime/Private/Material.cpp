@@ -3,11 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-
-
 #include "CoreUtils.h"
-
-
 
 namespace CarrotToy {
 
