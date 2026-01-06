@@ -1,8 +1,8 @@
 #include "RHI.h"
 #include "OpenGLRHI.h"
+#include "Platform.h"
 #include <iostream>
 #include <cstring>
-#include <GLFW/glfw3.h>
 #include <thread>
 #include <chrono>
 

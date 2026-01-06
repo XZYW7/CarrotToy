@@ -20,6 +20,7 @@ add_requires("imgui", {
 target("CarrotToy")
     set_kind("binary")
     add_files("src/*.cpp")
+    add_files("src/Platform/*.cpp")
     add_headerfiles("include/*.h")
     add_includedirs("include")
     

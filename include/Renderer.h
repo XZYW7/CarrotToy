@@ -2,8 +2,7 @@
 
 #include <memory>
 #include <string>
-
-struct GLFWwindow;
+#include "Platform.h"
 
 namespace CarrotToy {
 
@@ -34,7 +33,8 @@ public:
     std::shared_ptr<Material> getPreviewMaterial() const;
 
     bool shouldClose();
-    GLFWwindow* getWindow() { return window; }
+    Platform::WindowHandle getWindowHandle() const;
+    std::shared_ptr<Platform::IPlatformWindow> getWindow() const { return window; }
     
     void setRenderMode(RenderMode mode) { renderMode = mode; }
     RenderMode getRenderMode() const { return renderMode; }
@@ -44,7 +44,8 @@ public:
     void performOfflineRayTrace(const std::string& scenePath, const std::string& outputPath);
     
 private:
-    GLFWwindow* window;
+    std::shared_ptr<Platform::IPlatform> platform;
+    std::shared_ptr<Platform::IPlatformWindow> window;
     int width, height;
     RenderMode renderMode;
     

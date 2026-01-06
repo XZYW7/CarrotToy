@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include "CoreUtils.h"
-#include <GLFW/glfw3.h>
+
 namespace CarrotToy {
 namespace RHI {
 
@@ -563,23 +563,15 @@ OpenGLRHIDevice::~OpenGLRHIDevice() {
 }
 
 bool OpenGLRHIDevice::initialize() {
-    // OpenGL context should already be initialized by GLFW/GLAD
-    // This is just a validation check
-
-    // Initialize GLAD
-    if (!glfwInit()) return false;
-    GLFWwindow* window = glfwCreateWindow(800,600,"RHI Example",nullptr,nullptr);
-    glfwMakeContextCurrent(window);
-
+    // OpenGL context and loader (GLAD) should already be initialized by the Platform layer
+    // This is just a validation check to ensure OpenGL is available
+    
+    // Check if OpenGL functions are loaded
     if (!gladLoadGL()) {
-        std::cerr << "Failed to initialize OpenGL RHI" << std::endl;
+        std::cerr << "OpenGL not loaded. Ensure platform has initialized context and GLAD." << std::endl;
         return false;
     }
     
-    // if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-    //     std::cerr << "Failed to initialize GLAD" << std::endl;
-    //     return false;
-    // }
     initialized = true;
     return true;
 }
