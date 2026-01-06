@@ -19,6 +19,15 @@ static void loadFileToBuffer(const std::string& path, char* buf, size_t bufSize)
         LOG("buffer = 0");
         return;
     }
+    auto ends_with = [](const std::string &s, const std::string &suffix) {
+    return s.size() >= suffix.size() &&
+            s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+    };
+    if (ends_with(path, ".spv")) {
+        LOG("SPIR-V binary files cannot be loaded as text source: " << path);
+        buf[0] = '\0';
+        return;
+    }
     // Find file
     auto absPath = std::filesystem::absolute(path);
     if (!std::filesystem::exists(absPath)) {
@@ -150,8 +159,8 @@ void MaterialEditor::showMaterialList() {
         
         if (ImGui::Button("Create")) {
             auto defaultShader = std::make_shared<Shader>(
-                "shaders/default.vert",
-                "shaders/default.frag"
+                "shaders/default.vs.spv",
+                "shaders/default.ps.spv"
             );
             
             // Create default material
