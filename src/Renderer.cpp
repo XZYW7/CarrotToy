@@ -1,7 +1,6 @@
 #include "Renderer.h"
 #include "Material.h"
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -61,20 +60,20 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     });
     
     // Initialize GLAD using platform's proc address loader
-    // We need to use a static function wrapper for the C-style function pointer
-    static std::shared_ptr<Platform::IPlatformWindow> s_gladWindow;
-    s_gladWindow = window;
+    // Store raw pointer temporarily for GLAD initialization (thread-local for safety)
+    thread_local Platform::IPlatformWindow* t_gladWindow = nullptr;
+    t_gladWindow = window.get();
     
     auto gladLoader = [](const char* name) -> void* {
-        return s_gladWindow ? s_gladWindow->getProcAddress(name) : nullptr;
+        return t_gladWindow ? t_gladWindow->getProcAddress(name) : nullptr;
     };
     
     if (!gladLoadGLLoader((GLADloadproc)gladLoader)) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
-        s_gladWindow.reset();
+        t_gladWindow = nullptr;
         return false;
     }
-    s_gladWindow.reset();  // Clear after successful initialization
+    t_gladWindow = nullptr;  // Clear after successful initialization
     
     // Create and register a global RHI device (OpenGL backend)
     auto rhiDevice = CarrotToy::RHI::createRHIDevice(CarrotToy::RHI::GraphicsAPI::OpenGL);
