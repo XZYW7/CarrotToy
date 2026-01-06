@@ -5,6 +5,47 @@ All notable changes to CarrotToy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-01-06
+
+### Added
+- **Platform Abstraction Layer**: New cross-platform window and input management system
+  - `Platform.h` and `PlatformTypes.h` interfaces for platform abstraction
+  - GLFW-based implementation supporting Windows, Linux, and macOS
+  - `IPlatform` interface for platform-wide operations
+  - `IPlatformWindow` interface for window management
+  - Factory function for platform creation
+  - Display/monitor information queries
+  - High-precision time queries
+- **Platform Documentation**: Comprehensive `PLATFORM.md` documentation
+- **Implementation Summary**: `PLATFORM_IMPLEMENTATION.md` detailing all changes
+
+### Changed
+- **RHI Structure Improvements**:
+  - Removed direct GLFW dependencies from OpenGLRHI
+  - RHI now expects OpenGL context initialized by Platform layer
+  - Cleaner separation between RHI and platform concerns
+- **Renderer Updates**:
+  - Refactored to use Platform abstraction instead of direct GLFW calls
+  - Replaced `GLFWwindow*` with `std::shared_ptr<Platform::IPlatformWindow>`
+  - Added `getWindowHandle()` for native handle access
+- **MaterialEditor Updates**:
+  - Updated to use platform window handle through Renderer
+- **Build System**:
+  - Updated `xmake.lua` to include Platform sources
+- **Documentation**:
+  - Updated `README.md` with Platform abstraction information
+  - Updated `ARCHITECTURE.md` with new Platform layer
+  - Enhanced architecture diagrams and component descriptions
+
+### Removed
+- Direct GLFW initialization code from OpenGLRHI
+- Commented-out code from RHIExample.cpp
+- Unnecessary GLFW includes from RHI layer
+
+### Fixed
+- Better separation of concerns between platform and rendering code
+- Improved code organization and maintainability
+
 ## [0.1.0] - 2025-12-23
 
 ### Added

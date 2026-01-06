@@ -92,7 +92,9 @@ bool MaterialEditor::initialize(Renderer* r) {
     ImGui::StyleColorsDark();
     
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(renderer->getWindow(), true);
+    // Get the native GLFW window handle from the platform-abstracted window
+    GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(renderer->getWindowHandle());
+    ImGui_ImplGlfw_InitForOpenGL(glfwWindow, true);
     ImGui_ImplOpenGL3_Init("#version 330");
     
     return initialized;

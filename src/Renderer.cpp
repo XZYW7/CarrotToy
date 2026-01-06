@@ -1,20 +1,16 @@
 #include "Renderer.h"
 #include "Material.h"
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <cmath>
+
 namespace CarrotToy {
 
-static void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
-}
-
 Renderer::Renderer() 
-    : window(nullptr), width(800), height(600), 
+    : platform(nullptr), window(nullptr), width(800), height(600), 
       renderMode(RenderMode::Rasterization),
       sphereVAO(0), sphereVBO(0), sphereEBO(0),
       previewFBO(0), previewTexture(0) {
@@ -28,41 +24,65 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     width = w;
     height = h;
     
-    // Create and register a global RHI device (OpenGL backend). We don't call device->initialize()
-    // because the GL context & loader are already created by the renderer; the RHI implementation
-    // relies on an active context for creating GL resources.
+    // Create platform
+    platform = Platform::createPlatform();
+    if (!platform) {
+        std::cerr << "Failed to create platform" << std::endl;
+        return false;
+    }
+    
+    // Initialize platform
+    if (!platform->initialize()) {
+        std::cerr << "Failed to initialize platform" << std::endl;
+        return false;
+    }
+    
+    // Create window
+    Platform::WindowDesc windowDesc;
+    windowDesc.width = w;
+    windowDesc.height = h;
+    windowDesc.title = title.c_str();
+    windowDesc.resizable = true;
+    windowDesc.vsync = true;
+    
+    window = platform->createWindow(windowDesc);
+    if (!window) {
+        std::cerr << "Failed to create window" << std::endl;
+        return false;
+    }
+    
+    // Make context current
+    window->makeContextCurrent();
+    
+    // Set resize callback
+    window->setResizeCallback([](uint32_t width, uint32_t height) {
+        glViewport(0, 0, width, height);
+    });
+    
+    // Initialize GLAD using platform's proc address loader
+    // Store raw pointer temporarily for GLAD initialization (thread-local for safety)
+    thread_local Platform::IPlatformWindow* t_gladWindow = nullptr;
+    t_gladWindow = window.get();
+    
+    auto gladLoader = [](const char* name) -> void* {
+        return t_gladWindow ? t_gladWindow->getProcAddress(name) : nullptr;
+    };
+    
+    if (!gladLoadGLLoader((GLADloadproc)gladLoader)) {
+        std::cerr << "Failed to initialize GLAD" << std::endl;
+        t_gladWindow = nullptr;
+        return false;
+    }
+    t_gladWindow = nullptr;  // Clear after successful initialization
+    
+    // Create and register a global RHI device (OpenGL backend)
     auto rhiDevice = CarrotToy::RHI::createRHIDevice(CarrotToy::RHI::GraphicsAPI::OpenGL);
     if (rhiDevice) {
+        if (!rhiDevice->initialize()) {
+            std::cerr << "Failed to initialize RHI device" << std::endl;
+            return false;
+        }
         CarrotToy::RHI::setGlobalDevice(rhiDevice);
-    }
-    // Initialize GLFW
-    if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
-        return false;
-    }
-    
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-    
-    window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
-    if (!window) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return false;
-    }
-    
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-    
-    // Initialize GLAD
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
-        return false;
     }
 
     glViewport(0, 0, width, height);
@@ -81,11 +101,12 @@ void Renderer::shutdown() {
     if (previewFBO) glDeleteFramebuffers(1, &previewFBO);
     if (previewTexture) glDeleteTextures(1, &previewTexture);
     
-    if (window) {
-        glfwDestroyWindow(window);
-        window = nullptr;
+    // Shutdown window and platform
+    window.reset();
+    if (platform) {
+        platform->shutdown();
+        platform.reset();
     }
-    glfwTerminate();
 }
 
 void Renderer::beginFrame() {
@@ -94,8 +115,10 @@ void Renderer::beginFrame() {
 }
 
 void Renderer::endFrame() {
-    glfwSwapBuffers(window);
-    glfwPollEvents();
+    if (window) {
+        window->swapBuffers();
+        platform->pollEvents();
+    }
 }
 
 void Renderer::renderMaterialPreview(std::shared_ptr<Material> material) {
@@ -112,7 +135,7 @@ void Renderer::renderMaterialPreview(std::shared_ptr<Material> material) {
                                            (float)width / (float)height, 
                                            0.1f, 100.0f);
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, (float)platform->getTime(), glm::vec3(0.0f, 1.0f, 0.0f));
     
     auto shader = material->getShader();
     // Use typed helpers to upload per-frame matrices and light/camera data
@@ -146,7 +169,15 @@ void Renderer::renderScene() {
 }
 
 bool Renderer::shouldClose() {
-    return window ? glfwWindowShouldClose(window) : true;
+    if (!window) {
+        std::cerr << "Warning: shouldClose() called with null window" << std::endl;
+        return true;  // Return true to prevent infinite loops when window is missing
+    }
+    return window->shouldClose();
+}
+
+Platform::WindowHandle Renderer::getWindowHandle() const {
+    return window ? window->getNativeHandle() : nullptr;
 }
 void Renderer::setPreviewMaterial(std::shared_ptr<Material> m) {
     previewMaterial = m;

@@ -28,34 +28,86 @@ CarrotToy is designed as a modular material editor with clear separation of conc
     └───────────┬──────────┘    └────────────────────┘
                 │
     ┌───────────▼──────────┐    ┌────────────────────┐
-    │   Ray Tracer         │    │   OpenGL/GLFW      │
-    │   (RayTracer.cpp)    │    │   (glad, glfw3)    │
+    │  Platform Layer      │◄───┤   GLFW Backend     │
+    │  (Platform.h/cpp)    │    │   Window/Input     │
     └──────────────────────┘    └────────────────────┘
+                │
+    ┌───────────▼──────────┐
+    │   Ray Tracer         │
+    │   (RayTracer.cpp)    │
+    └──────────────────────┘
 ```
 
 ## Core Components
 
-### 1. Renderer (`Renderer.h/cpp`)
+### 0. Platform Layer (`Platform.h/cpp`)
 
-**Purpose**: Manages the rendering pipeline and window system.
+**Purpose**: Abstracts platform-specific window and input management.
 
 **Responsibilities**:
-- Window creation and management (GLFW)
-- OpenGL context initialization
+- Platform initialization and shutdown
+- Window creation and management
+- Event polling and input handling
+- Graphics context creation and management
+- Time queries and display information
+
+**Key Interfaces**:
+
+#### IPlatform
+- Platform initialization and lifecycle management
+- Window creation through `createWindow()`
+- Event polling through `pollEvents()`
+- Display/monitor queries
+- Platform time queries
+
+#### IPlatformWindow
+- Window state management (show, hide, focus, close)
+- Window property management (title, size, framebuffer size)
+- Graphics context operations (make current, swap buffers, get proc address)
+- Resize callbacks
+- Native handle access for RHI integration
+
+**Implementation**:
+- Uses GLFW for cross-platform support (Windows, Linux, macOS)
+- Wraps platform-specific functionality behind clean interfaces
+- Provides factory function `createPlatform()` for platform creation
+- Compile-time platform detection for platform-specific code
+
+**Design Benefits**:
+- Decouples rendering code from platform specifics
+- Enables future native platform implementations (Win32, X11, Cocoa)
+- Simplifies RHI initialization by handling context creation
+- Provides consistent interface across all platforms
+
+### 1. Renderer (`Renderer.h/cpp`)
+
+**Purpose**: Manages the rendering pipeline using the Platform abstraction.
+
+**Responsibilities**:
+- Platform and window initialization through Platform layer
+- OpenGL context initialization via Platform
 - Frame rendering loop
 - Preview geometry generation (sphere)
 - Framebuffer management
 - Render mode switching (Rasterization/Ray Tracing)
+- RHI device creation and management
 
 **Key Methods**:
-- `initialize()`: Sets up GLFW window and OpenGL context
+- `initialize()`: Sets up platform, window, and graphics context
 - `renderMaterialPreview()`: Renders a sphere with the given material
 - `renderScene()`: Main scene rendering function
 - `exportSceneForRayTracing()`: Exports scene data for offline rendering
 
+**Platform Integration**:
+- Uses `Platform::createPlatform()` to create platform instance
+- Creates window through `platform->createWindow()`
+- Manages graphics context through platform window
+- Initializes RHI device after platform setup
+
 **Design Patterns**:
 - Singleton-like pattern (one renderer instance per application)
 - RAII for resource management
+- Dependency injection (uses Platform abstraction)
 
 ### 2. Material System (`Material.h/cpp`)
 
