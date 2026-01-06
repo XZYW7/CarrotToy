@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include "Material.h"
 #include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -59,10 +60,9 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
         glViewport(0, 0, width, height);
     });
     
-    // Initialize GLAD using platform's proc address loader
-    if (!gladLoadGLLoader((GLADloadproc)[this](const char* name) -> void* {
-        return this->window->getProcAddress(name);
-    })) {
+    // Initialize GLAD using GLFW's proc address loader
+    // Since we're using GLFW backend, we can use glfwGetProcAddress directly
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         return false;
     }
@@ -161,7 +161,11 @@ void Renderer::renderScene() {
 }
 
 bool Renderer::shouldClose() {
-    return window ? window->shouldClose() : true;
+    if (!window) {
+        std::cerr << "Warning: shouldClose() called with null window" << std::endl;
+        return true;  // Return true to prevent infinite loops when window is missing
+    }
+    return window->shouldClose();
 }
 
 Platform::WindowHandle Renderer::getWindowHandle() const {

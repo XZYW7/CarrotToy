@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace CarrotToy {
 namespace Platform {
@@ -39,7 +40,13 @@ struct DisplayInfo {
     uint32_t width;
     uint32_t height;
     uint32_t refreshRate;
-    const char* name;
+    std::string name;  // Using std::string for safer string management
+    
+    DisplayInfo() 
+        : width(0), height(0), refreshRate(0), name("") {}
+    
+    DisplayInfo(uint32_t w, uint32_t h, uint32_t rate, const char* n)
+        : width(w), height(h), refreshRate(rate), name(n ? n : "") {}
 };
 
 } // namespace Platform

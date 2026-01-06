@@ -10,11 +10,8 @@ namespace Platform {
 class GLFWPlatformWindow : public IPlatformWindow {
 public:
     explicit GLFWPlatformWindow(GLFWwindow* window) 
-        : window_(window) {
-        if (!window_) {
-            throw std::runtime_error("Invalid GLFW window handle");
-        }
-        
+        : window_(window), resizeCallback_(nullptr) {
+        // Note: window should be valid - caller must check before construction
         // Store this pointer in window user data for callbacks
         glfwSetWindowUserPointer(window_, this);
         
@@ -167,9 +164,9 @@ public:
             return nullptr;
         }
         
-        // Enable vsync
+        // Make context current and configure vsync if requested
+        glfwMakeContextCurrent(window);
         if (desc.vsync) {
-            glfwMakeContextCurrent(window);
             glfwSwapInterval(1);
         }
         
@@ -188,12 +185,13 @@ public:
         
         for (int i = 0; i < count; ++i) {
             const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
-            DisplayInfo info;
-            info.width = mode->width;
-            info.height = mode->height;
-            info.refreshRate = mode->refreshRate;
-            info.name = glfwGetMonitorName(monitors[i]);
-            displays.push_back(info);
+            const char* monitorName = glfwGetMonitorName(monitors[i]);
+            displays.emplace_back(
+                mode->width,
+                mode->height,
+                mode->refreshRate,
+                monitorName
+            );
         }
         
         return displays;
@@ -202,14 +200,14 @@ public:
     DisplayInfo getPrimaryDisplay() const override {
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        const char* monitorName = glfwGetMonitorName(monitor);
         
-        DisplayInfo info;
-        info.width = mode->width;
-        info.height = mode->height;
-        info.refreshRate = mode->refreshRate;
-        info.name = glfwGetMonitorName(monitor);
-        
-        return info;
+        return DisplayInfo(
+            mode->width,
+            mode->height,
+            mode->refreshRate,
+            monitorName
+        );
     }
     
     double getTime() const override {
