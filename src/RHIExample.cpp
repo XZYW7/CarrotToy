@@ -198,23 +198,9 @@ void demonstrateRHIUsage() {
     shaderProgram->unbind();
     
     std::cout << "Render pass demonstrated" << std::endl;
-    if (GLFWwindow* window = glfwGetCurrentContext()) 
-    {
-        // lazy to swap buffers here, not redrawing every frame
-        glfwSwapBuffers(window);
-        std::cout << "Entering event loop. Close the window to exit." << std::endl;
-        while (!glfwWindowShouldClose(window)) {
-            glfwPollEvents();
-            // glfwSwapBuffers(window);
-            std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60fps idle
-        }
-    } 
-    else 
-    {
-        // fallback: wait for user input so window doesn't disappear instantly
-        std::cout << "No GLFW context found; press Enter to exit..." << std::endl;
-        std::cin.get();
-    }
+    std::cout << "Note: This is a demonstration of RHI API usage patterns." << std::endl;
+    std::cout << "In a real application, integrate with the Platform layer for window management." << std::endl;
+    
     // 12. Cleanup is automatic via smart pointers
     rhiDevice->shutdown();
     std::cout << "RHI demonstration complete" << std::endl;

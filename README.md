@@ -11,7 +11,8 @@
 - **Material Editor UI**: ImGui-based interface for intuitive material editing
 - **Hot Reload**: Automatic shader reloading when files are modified
 - **PBR Materials**: Built-in physically-based rendering shader support
-- **RHI (Render Hardware Interface)**: Graphics API abstraction layer for future multi-API support (Vulkan, DirectX, Metal)
+- **RHI (Render Hardware Interface)**: Graphics API abstraction layer for multi-API support
+- **Platform Abstraction**: Cross-platform window and input management supporting Windows, Linux, and macOS
 
 ## Architecture
 
@@ -22,12 +23,20 @@ CarrotToy/
 │   ├── Material.cpp   # Material and shader system
 │   ├── Renderer.cpp   # Rendering engine (rasterization)
 │   ├── MaterialEditor.cpp  # ImGui-based editor interface
-│   └── RayTracer.cpp  # Offline ray tracing implementation
+│   ├── RayTracer.cpp  # Offline ray tracing implementation
+│   └── Platform/      # Platform abstraction layer
+│       └── Platform.cpp  # Cross-platform window/input management
 ├── include/           # Header files
 │   ├── Material.h
 │   ├── Renderer.h
 │   ├── MaterialEditor.h
-│   └── RayTracer.h
+│   ├── RayTracer.h
+│   ├── Platform.h         # Platform abstraction interface
+│   ├── PlatformTypes.h    # Platform type definitions
+│   ├── RHI.h              # RHI main interface
+│   ├── RHITypes.h         # RHI type definitions
+│   ├── RHIResources.h     # RHI resource abstractions
+│   └── OpenGLRHI.h        # OpenGL RHI implementation
 ├── shaders/           # GLSL shader files
 │   ├── default.vert   # Default vertex shader
 │   ├── default.frag   # PBR fragment shader
