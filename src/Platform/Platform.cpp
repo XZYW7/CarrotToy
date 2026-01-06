@@ -11,7 +11,12 @@ class GLFWPlatformWindow : public IPlatformWindow {
 public:
     explicit GLFWPlatformWindow(GLFWwindow* window) 
         : window_(window), resizeCallback_(nullptr) {
-        // Note: window should be valid - caller must check before construction
+        // Validate window parameter - caller should ensure this is valid
+        if (!window_) {
+            std::cerr << "Error: GLFWPlatformWindow created with null window" << std::endl;
+            return;
+        }
+        
         // Store this pointer in window user data for callbacks
         glfwSetWindowUserPointer(window_, this);
         
@@ -186,11 +191,12 @@ public:
         for (int i = 0; i < count; ++i) {
             const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
             const char* monitorName = glfwGetMonitorName(monitors[i]);
+            // glfwGetMonitorName can return null for disconnected monitors
             displays.emplace_back(
                 mode->width,
                 mode->height,
                 mode->refreshRate,
-                monitorName
+                monitorName ? monitorName : "Unknown Monitor"
             );
         }
         
@@ -206,7 +212,7 @@ public:
             mode->width,
             mode->height,
             mode->refreshRate,
-            monitorName
+            monitorName ? monitorName : "Primary Monitor"
         );
     }
     

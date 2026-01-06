@@ -45,8 +45,8 @@ struct DisplayInfo {
     DisplayInfo() 
         : width(0), height(0), refreshRate(0), name("") {}
     
-    DisplayInfo(uint32_t w, uint32_t h, uint32_t rate, const char* n)
-        : width(w), height(h), refreshRate(rate), name(n ? n : "") {}
+    DisplayInfo(uint32_t w, uint32_t h, uint32_t rate, const std::string& n)
+        : width(w), height(h), refreshRate(rate), name(n) {}
 };
 
 } // namespace Platform

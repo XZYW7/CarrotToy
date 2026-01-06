@@ -60,12 +60,21 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
         glViewport(0, 0, width, height);
     });
     
-    // Initialize GLAD using GLFW's proc address loader
-    // Since we're using GLFW backend, we can use glfwGetProcAddress directly
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    // Initialize GLAD using platform's proc address loader
+    // We need to use a static function wrapper for the C-style function pointer
+    static std::shared_ptr<Platform::IPlatformWindow> s_gladWindow;
+    s_gladWindow = window;
+    
+    auto gladLoader = [](const char* name) -> void* {
+        return s_gladWindow ? s_gladWindow->getProcAddress(name) : nullptr;
+    };
+    
+    if (!gladLoadGLLoader((GLADloadproc)gladLoader)) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
+        s_gladWindow.reset();
         return false;
     }
+    s_gladWindow.reset();  // Clear after successful initialization
     
     // Create and register a global RHI device (OpenGL backend)
     auto rhiDevice = CarrotToy::RHI::createRHIDevice(CarrotToy::RHI::GraphicsAPI::OpenGL);
