@@ -59,8 +59,10 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
         glViewport(0, 0, width, height);
     });
     
-    // Initialize GLAD
-    if (!gladLoadGLLoader((GLADloadproc)window->getProcAddress("glGetString"))) {
+    // Initialize GLAD using platform's proc address loader
+    if (!gladLoadGLLoader((GLADloadproc)[this](const char* name) -> void* {
+        return this->window->getProcAddress(name);
+    })) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         return false;
     }

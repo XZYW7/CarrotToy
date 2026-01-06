@@ -566,9 +566,10 @@ bool OpenGLRHIDevice::initialize() {
     // OpenGL context and loader (GLAD) should already be initialized by the Platform layer
     // This is just a validation check to ensure OpenGL is available
     
-    // Check if OpenGL functions are loaded
-    if (!gladLoadGL()) {
-        std::cerr << "OpenGL not loaded. Ensure platform has initialized context and GLAD." << std::endl;
+    // Verify that we can get OpenGL version (confirms context is active and loaded)
+    const GLubyte* version = glGetString(GL_VERSION);
+    if (!version) {
+        std::cerr << "OpenGL context not available. Ensure platform has initialized context and GLAD." << std::endl;
         return false;
     }
     
