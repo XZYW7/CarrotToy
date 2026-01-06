@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <locale>
 #include <codecvt>
-
+#include <filesystem>
+#include "CoreUtils.h"
 namespace CarrotToy {
 
 // -- helpers --------------------------------------------------------------
@@ -26,6 +27,11 @@ static bool compareStartsWith(const std::string& s, const std::string& pref, boo
 }
 
 // -- Path implementation -------------------------------------------------
+
+// cached values (set during initialization)
+static std::string g_launchDir;
+static std::string g_projectDir;
+
 
 std::wstring Path::toWString(const std::string& s) {
 	if (s.empty()) return {};
@@ -159,6 +165,75 @@ std::vector<std::string> Path::split(const std::string& path, char sep) {
 	}
 	if (!cur.empty()) parts.push_back(cur);
 	return parts;
+}
+
+std::string Path::LaunchDir() {
+	if (!g_launchDir.empty()) return g_launchDir;
+	try {
+		return normalize(std::filesystem::current_path().string(), true);
+	} catch (...) {
+		return std::string();
+	}
+}
+
+std::string Path::ProjectDir() {
+	if (!g_projectDir.empty()) return g_projectDir;
+	const char* env = std::getenv("CARROTTOY_PROJECT_DIR");
+	if (env && env[0]) return normalize(std::string(env), true);
+	return LaunchDir();
+}
+
+std::string Path::ShaderWorkingDir() {
+	std::string proj = ProjectDir();
+	if (proj.empty()) proj = LaunchDir();
+	std::string p = proj;
+	if (!p.empty() && p.back() != '/') p.push_back('/');
+	p += "shaders";
+	return normalize(p, true);
+}
+
+// Initialization API
+void Path::SetLaunchDir(const std::string& dir) {
+	g_launchDir = normalize(dir, true);
+}
+
+void Path::SetProjectDir(const std::string& dir) {
+	g_projectDir = normalize(dir, true);
+}
+
+static std::string findProjectDirFromArgs(int argc, const char** argv) {
+	if (!argv) return std::string();
+	for (int i = 0; i < argc; ++i) {
+		LOG("argv[" << i << "] = " << argv[i]);
+		std::string a = argv[i];
+		// forms: --projectdir=, --projectdir <value>, -ProjectDir=<value>, /ProjectDir=<value>
+		auto eq = a.find('=');
+		std::string key = (eq == std::string::npos) ? a : a.substr(0, eq);
+		std::string val = (eq == std::string::npos) ? std::string() : a.substr(eq + 1);
+
+		// make case-insensitive comparison for common flag forms
+		std::string kl = toLowerCopy(key);
+		if (kl == "--projectdir" || kl == "--project-dir" || kl == "-projectdir" || kl == "-project-dir" || kl == "/projectdir" || kl == "/project-dir") {
+			if (!val.empty()) return val;
+			if (i + 1 < argc) return std::string(argv[i + 1]);
+		}
+	}
+	return std::string();
+}
+
+void Path::InitFromCmdLineAndEnv(int argc, const char** argv) {
+	// launch dir: prefer exe current_path
+	try { SetLaunchDir(std::filesystem::current_path().string()); } catch (...) { SetLaunchDir(std::string()); }
+
+	// project dir: cmdline -> env -> fallback to launch
+	std::string fromArgs = findProjectDirFromArgs(argc, argv);
+	if (!fromArgs.empty()) { SetProjectDir(fromArgs); return; }
+
+	const char* env = std::getenv("CARROTTOY_PROJECT_DIR");
+	if (env && env[0]) { SetProjectDir(std::string(env)); return; }
+
+	// fallback: treat launch dir as project dir
+	SetProjectDir(LaunchDir());
 }
 
 } // namespace CarrotToy

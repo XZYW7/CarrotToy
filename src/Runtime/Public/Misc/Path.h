@@ -39,6 +39,20 @@ public:
 
 	// Split by path separator (normalized '/')
 	static std::vector<std::string> split(const std::string& path, char sep = '/');
+
+	// Directory helpers (lightweight replacements for Unreal's FPaths)
+	// LaunchDir: the current working directory where the app was launched
+	static std::string LaunchDir();
+	// ProjectDir: the root directory of the project (defaults to LaunchDir)
+	static std::string ProjectDir();
+	// ShaderWorkingDir: where project shader sources live (ProjectDir + "/shaders")
+	static std::string ShaderWorkingDir();
+
+	// Initialization API - call once at startup to set canonical dirs.
+	static void SetLaunchDir(const std::string& dir);
+	static void SetProjectDir(const std::string& dir);
+	// Initialize from command line args and environment. argc/argv optional.
+	static void InitFromCmdLineAndEnv(int argc = 0, const char** argv = nullptr);
 };
 
 } // namespace CarrotToy

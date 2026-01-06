@@ -5,6 +5,11 @@
 		}
 	],
 	"settings": {
+		"xmake.runningTargetsArguments": {
+			"CarrotToy": [
+				"--projectDir=${workspaceFolder}"
+			]
+		},
 		"C_Cpp.default.compileCommands": [
 			"${workspaceFolder}/.vscode/compile_commands.json"
 		],

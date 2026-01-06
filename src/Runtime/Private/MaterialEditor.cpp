@@ -10,26 +10,33 @@
 #include <cstring>
 #include <filesystem>
 #include "CoreUtils.h"
-
+#include "Misc/Path.h"
 namespace CarrotToy {
 // 新增：从文件加载到 buffer 的小工具
 static void loadFileToBuffer(const std::string& path, char* buf, size_t bufSize) {
+    std::string loadFilePath = path;
     if (bufSize == 0) 
     {
         LOG("buffer = 0");
         return;
     }
-    auto ends_with = [](const std::string &s, const std::string &suffix) {
-    return s.size() >= suffix.size() &&
-            s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
-    };
-    if (ends_with(path, ".spv")) {
-        LOG("SPIR-V binary files cannot be loaded as text source: " << path);
-        buf[0] = '\0';
-        return;
+    if (Path::endsWith(path, ".spv", false)) {
+        // Map SPIR-V binary name back to the original HLSL source in the project's shader folder.
+        // Example: "default.vs.spv" -> "<Project>/shaders/default.vs.hlsl"
+        std::string noSpv = Path::removeExtension(path); // removes .spv -> may be "shaders/default.vs" or "default.vs"
+        std::string fname = Path::getFilename(noSpv); // e.g. "default.vs"
+        std::string shaderDir = Path::ShaderWorkingDir();
+        if (shaderDir.empty()) {
+            LOG("ShaderWorkingDir not set, cannot map .spv to .hlsl");
+            buf[0] = '\0';
+            return;
+        }
+        if (shaderDir.back() != '/' && shaderDir.back() != '\\') shaderDir.push_back('/');
+        loadFilePath = shaderDir + fname + ".hlsl";
+        LOG("Mapped .spv to HLSL source: " << loadFilePath);
     }
     // Find file
-    auto absPath = std::filesystem::absolute(path);
+    auto absPath = std::filesystem::absolute(loadFilePath);
     if (!std::filesystem::exists(absPath)) {
         LOG("File NOT found at: " << absPath.string());
         LOG("Current working dir: " << std::filesystem::current_path().string());

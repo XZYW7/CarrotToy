@@ -5,10 +5,17 @@
 #include "RayTracer.h"
 #include <iostream>
 #include <memory>
-
+#include "Misc/Path.h"
 using namespace CarrotToy;
 
-int main() {
+int main(int argc, char** argv) {
+    // Initialize Path globals from command line / environment once at startup
+    Path::InitFromCmdLineAndEnv(argc, const_cast<const char**>(argv));
+
+    std::cout << "launchDir " << Path::LaunchDir() << std::endl;
+    std::cout << "projectDir " << Path::ProjectDir() << std::endl;
+    std::cout << "shaderWorkingDir " << Path::ShaderWorkingDir() << std::endl;
+
     std::cout << "CarrotToy - Material Editor Lab" << std::endl;
     std::cout << "================================" << std::endl;
     
