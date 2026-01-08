@@ -98,6 +98,7 @@ bool MaterialEditor::initialize(Renderer* r) {
     initialized = true;
     renderer = r;
     
+    // TODO : Distangle the Imgui Logic from editor
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -111,7 +112,7 @@ bool MaterialEditor::initialize(Renderer* r) {
     // Get the native GLFW window handle from the platform-abstracted window
     GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(renderer->getWindowHandle());
     ImGui_ImplGlfw_InitForOpenGL(glfwWindow, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
+    ImGui_ImplOpenGL3_Init("#version 460");
     
     return initialized;
 }
@@ -175,6 +176,7 @@ void MaterialEditor::showMaterialList() {
                 materialName, 
                 defaultShader
             );
+            defaultShader->reload();
             defaultMaterial->setVec3("albedo", 0.8f, 0.2f, 0.2f);
             defaultMaterial->setFloat("metallic", 0.5f);
             defaultMaterial->setFloat("roughness", 0.5f);
@@ -189,6 +191,7 @@ void MaterialEditor::showMaterialList() {
     for (auto& [name, material] : materials) {
         if (ImGui::Selectable(name.c_str(), selectedMaterialName == name)) {
             selectedMaterialName = name;
+            material->getShader()->linkProgram();
             printf("Getting selected material: %s\n", selectedMaterialName.c_str());
         }
     }

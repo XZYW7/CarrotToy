@@ -73,7 +73,6 @@ static bool compileSPIRVShader(unsigned int& shader, int type, const std::string
 // Shader implementation
 Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
     : vertexPath(vertexPath), fragmentPath(fragmentPath), programID(0) {
-    reload();
 }
 
 Shader::~Shader() {
@@ -140,7 +139,16 @@ bool Shader::compile(const std::string& vertexSource, const std::string& fragmen
         glDeleteShader(vertex);
         return false;
     }
+    vertexShaderID = vertex;
+    fragmentShaderID = fragment;
+    return true;
     
+}
+bool Shader::linkProgram()
+{
+    return linkProgram(getVertexShaderID(), getFragmentShaderID());
+}
+bool Shader::linkProgram(unsigned int vertex, unsigned int fragment) {
     // Create and link program
     unsigned int newProgramID = glCreateProgram();
     glAttachShader(newProgramID, vertex);
@@ -278,10 +286,6 @@ bool Shader::compile(const std::string& vertexSource, const std::string& fragmen
     // Delete old program if exists
     if (programID != 0) {
         if (g_ProgramUBOs.count(programID)) {
-            auto& ids = g_ProgramUBOs[programID].uboIDs;
-            if (!ids.empty()) {
-                glDeleteBuffers((GLsizei)ids.size(), ids.data());
-            }
             g_ProgramUBOs.erase(programID);
         }
         glDeleteProgram(programID);
@@ -291,7 +295,7 @@ bool Shader::compile(const std::string& vertexSource, const std::string& fragmen
     
     glDeleteShader(vertex);
     glDeleteShader(fragment);
-    
+    linked = true;
     return true;
 }
 
@@ -311,12 +315,6 @@ bool Shader::compileShader(unsigned int& shader, int type, const std::string& so
         return false;
     }
     
-    return true;
-}
-
-bool Shader::linkProgram(unsigned int vertex, unsigned int fragment) {
-    // Linking is now done directly in compile() function
-    // This function is kept for compatibility but is no longer used
     return true;
 }
 

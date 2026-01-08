@@ -6,7 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <cmath>
-
+#include "CoreUtils.h"
 namespace CarrotToy {
 
 Renderer::Renderer() 

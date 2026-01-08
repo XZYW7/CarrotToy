@@ -54,8 +54,11 @@ public:
 
     std::string getVertexPath() const { return vertexPath; }
     std::string getFragmentPath() const { return fragmentPath; }
-    
+    int getVertexShaderID() const { return vertexShaderID; }
+    int getFragmentShaderID() const { return fragmentShaderID; }
+    bool linkProgram();
 private:
+    bool linked = false;
     unsigned int programID;
     std::string vertexPath;
     std::string fragmentPath;
@@ -68,6 +71,9 @@ private:
     size_t materialUBOSize = 0;
     
     bool compileShader(unsigned int& shader, int type, const std::string& source);
+    
     bool linkProgram(unsigned int vertex, unsigned int fragment);
+    int vertexShaderID = 0;
+    int fragmentShaderID = 0;
 };
 }

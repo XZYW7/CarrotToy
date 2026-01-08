@@ -51,7 +51,8 @@ bool FMainLoop::Init()
             "shaders/default.vs.spv",
             "shaders/default.ps.spv"
         );
-
+        defaultShader->reload();
+        defaultShader->linkProgram();
         // Create default material
         defaultMaterial = CarrotToy::MaterialManager::getInstance().createMaterial(
             "DefaultPBR",
@@ -135,7 +136,7 @@ void FMainLoop::Tick()
         double avg = 0.0;
         for (float f : FrameTimes) avg += f;
         if (!FrameTimes.empty()) avg /= FrameTimes.size();
-        std::cout << "Frame " << FrameCounter << " avg ms=" << avg << " last ms=" << frameTimeMs << std::endl;
+        std::cout << "Frame " << FrameCounter << " avg ms=" << avg << " last ms=" << frameTimeMs << "fps=" << (1000.0 / frameTimeMs) << std::endl;
         // cap stored frames to the last N
         if (FrameTimes.size() > 1000) FrameTimes.erase(FrameTimes.begin(), FrameTimes.begin() + (FrameTimes.size() - 1000));
     }
