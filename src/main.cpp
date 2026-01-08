@@ -6,77 +6,40 @@
 #include <iostream>
 #include <memory>
 #include "Misc/Path.h"
+#include "Luanch.h"
 using namespace CarrotToy;
 
 int main(int argc, char** argv) {
-    // Initialize Path globals from command line / environment once at startup
-    Path::InitFromCmdLineAndEnv(argc, const_cast<const char**>(argv));
+    /*
+    启动阶段顺序（推荐）：
+Parse command-line & env -> Path::Set* / config
 
-    std::cout << "launchDir " << Path::LaunchDir() << std::endl;
-    std::cout << "projectDir " << Path::ProjectDir() << std::endl;
-    std::cout << "shaderWorkingDir " << Path::ShaderWorkingDir() << std::endl;
+Platform / Window / Context 创建（必要时）
 
-    std::cout << "CarrotToy - Material Editor Lab" << std::endl;
-    std::cout << "================================" << std::endl;
-    
-    // Initialize renderer
-    auto renderer = std::make_unique<Renderer>();
-    if (!renderer->initialize(1280, 720, "CarrotToy - Material Editor")) {
-        std::cerr << "Failed to initialize renderer" << std::endl;
+RHI device 初始化（需要依赖当前 GL/VK context）
+
+Logger / Profiler 初始化（先于后续模块）
+
+Resource managers / Asset registry
+
+Renderer / UI / Input / Editor 等
+    */
+    FMainLoop mainLoop;
+    if(!mainLoop.PreInit(argc, argv))
+    {
+        std::cerr << "PreInit failed\n";
         return -1;
     }
-    
-    std::cout << "Renderer initialized successfully" << std::endl;
-    
-    // Create default shader
-    auto defaultShader = std::make_shared<Shader>(
-        "shaders/default.vs.spv",
-        "shaders/default.ps.spv"
-    );
-    
-    // Create default material
-    auto defaultMaterial = MaterialManager::getInstance().createMaterial(
-        "DefaultPBR", 
-        defaultShader
-    );
-    defaultMaterial->setVec3("albedo", 0.8f, 0.2f, 0.2f);
-    defaultMaterial->setFloat("metallic", 0.5f);
-    defaultMaterial->setFloat("roughness", 0.5f);
-    
-    std::cout << "Default material created" << std::endl;
-    
-    // Initialize material editor
-    auto editor = std::make_unique<MaterialEditor>();
-    if (!editor->initialize(renderer.get())) {
-        std::cerr << "Failed to initialize material editor" << std::endl;
+    if(!mainLoop.Init())
+    {
+        std::cerr << "Init failed\n";
         return -1;
     }
-    
-    std::cout << "Material editor initialized successfully" << std::endl;
-    std::cout << "\nControls:" << std::endl;
-    std::cout << "- Use the Materials panel to select and create materials" << std::endl;
-    std::cout << "- Use Material Properties to edit shader parameters" << std::endl;
-    std::cout << "- Use Shader Editor to edit and recompile shaders in runtime" << std::endl;
-    std::cout << "- Toggle between Rasterization and Ray Tracing modes" << std::endl;
-    
-    // Main loop
-    while (!renderer->shouldClose()) {
-        renderer->beginFrame();
-        auto selected = editor->getSelectedMaterial() ? editor->getSelectedMaterial() : defaultMaterial;
-        // Render scene with current material
-        renderer->renderMaterialPreview(selected);
-        
-        // Render UI
-        editor->render();
-        
-        renderer->endFrame();
+
+    while(!mainLoop.ShouldExit)
+    {
+        mainLoop.Tick();
     }
-    
-    // Cleanup
-    editor->shutdown();
-    renderer->shutdown();
-    
-    std::cout << "\nCarrotToy shutdown complete" << std::endl;
-    
+    mainLoop.Exit();
     return 0;
 }
