@@ -5,7 +5,12 @@
 #include "Material.h"
 #include "MaterialEditor.h"
 #include <iostream>
+#include "Modules/Module.h"
 using namespace CarrotToy;
+
+
+extern TCHAR GInternalProjectName[64];
+
 FMainLoop::FMainLoop()
 {
     // nothing heavy here
@@ -25,6 +30,7 @@ bool FMainLoop::PreInit(int argc, char** argv)
     std::cout << "launchDir " << Path::LaunchDir() << std::endl;
     std::cout << "projectDir " << Path::ProjectDir() << std::endl;
     std::cout << "shaderWorkingDir " << Path::ShaderWorkingDir() << std::endl;
+    std::cout << "InternalProjectName " << (GInternalProjectName) << std::endl;
 
     // Initialize timing
     LastTime = std::chrono::high_resolution_clock::now();
@@ -33,7 +39,15 @@ bool FMainLoop::PreInit(int argc, char** argv)
     FrameTimes.clear();
     TotalTickTime = 0.0;
 
+
+    LoadPreInitModules();
+
     return true;
+}
+
+void FMainLoop::LoadPreInitModules()
+{
+    FModuleManager::Get().LoadModule("Core");
 }
 
 bool FMainLoop::Init()

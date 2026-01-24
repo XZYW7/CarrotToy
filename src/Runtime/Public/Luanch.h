@@ -23,6 +23,10 @@ public:
 	void Tick();                        // called repeatedly in loop
 	void Exit();                        // shutdown/cleanup
 
+private:
+	// Load modules required before Init()
+	void LoadPreInitModules();
+	
 public:
 	bool ShouldExit = false;
 
@@ -44,3 +48,5 @@ protected:
 	std::unique_ptr<CarrotToy::MaterialEditor> editor;
 	std::shared_ptr<CarrotToy::Material> defaultMaterial;
 };
+
+extern FMainLoop GEngineLoop;

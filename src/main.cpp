@@ -24,22 +24,22 @@ Resource managers / Asset registry
 
 Renderer / UI / Input / Editor 等
     */
-    FMainLoop mainLoop;
-    if(!mainLoop.PreInit(argc, argv))
+
+    if(!GEngineLoop.PreInit(argc, argv))
     {
         std::cerr << "PreInit failed\n";
         return -1;
     }
-    if(!mainLoop.Init())
+    if(!GEngineLoop.Init())
     {
         std::cerr << "Init failed\n";
         return -1;
     }
 
-    while(!mainLoop.ShouldExit)
+    while(!GEngineLoop.ShouldExit)
     {
-        mainLoop.Tick();
+        GEngineLoop.Tick();
     }
-    mainLoop.Exit();
+    GEngineLoop.Exit();
     return 0;
 }
