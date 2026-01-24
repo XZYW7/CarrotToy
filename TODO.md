@@ -7,6 +7,7 @@
 - [ ] 解耦Device
 - [ ] 解耦Window
 - [ ] OpenglRHI修复bug
+- [ ] 接入NVRHI
 - [ ] 支持vulkan
 - [ ] 支持dx12
 
