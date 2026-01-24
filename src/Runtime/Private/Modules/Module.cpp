@@ -1,31 +1,25 @@
 #include "Modules/Module.h"
 #include <iostream>
 
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <dlfcn.h>
-#endif
-
-ModuleManager& ModuleManager::Get()
+FModuleManager& FModuleManager::Get()
 {
-    static ModuleManager mgr;
+    static FModuleManager mgr;
     return mgr;
 }
 
-void ModuleManager::RegisterModule(const FName& name, FUniquePtr<IModuleInterface> module)
+void FModuleManager::RegisterModule(const FName& name, FUniquePtr<IModuleInterface> module)
 {
     LOG("ModuleManager: "<< "Registering module " << name);
     modules[name] = std::move(module);
 }
 
-IModuleInterface* ModuleManager::GetModule(const FName& name)
+IModuleInterface* FModuleManager::GetModule(const FName& name)
 {
     auto it = modules.find(name);
     return it == modules.end() ? nullptr : it->second.get();
 }
 
-void ModuleManager::UnloadModule(const FName& name)
+void FModuleManager::UnloadModule(const FName& name)
 {
     auto it = modules.find(name);
     if (it != modules.end()) {
@@ -34,7 +28,7 @@ void ModuleManager::UnloadModule(const FName& name)
     }
 }
 
-void ModuleManager::ShutdownAll()
+void FModuleManager::ShutdownAll()
 {
     for (auto& kv : modules) kv.second->ShutdownModule();
     modules.clear();
@@ -45,7 +39,7 @@ void ModuleManager::ShutdownAll()
 #pragma region Unvalidated
 
 // TODO : Not validated
-bool ModuleManager::LoadModuleDynamic(const FName& name)
+bool FModuleManager::LoadModuleDynamic(const FName& name)
 {
     // FString path = GetModuleDiskPath(name);
     FString path = name; // For testing, assume name is full path
