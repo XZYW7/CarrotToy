@@ -1,12 +1,5 @@
-#include "Renderer.h"
-#include "Shader.h"
-#include "Material.h"
-#include "MaterialEditor.h"
-#include "RayTracer.h"
 #include <iostream>
-#include <memory>
-#include "Misc/Path.h"
-#include "Luanch.h"
+#include "Launch.h"
 using namespace CarrotToy;
 
 int main(int argc, char** argv) {

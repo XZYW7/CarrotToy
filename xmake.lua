@@ -17,24 +17,14 @@ add_requires("imgui", {
         docking = true     -- 启用 docking 特性
     }
 })
-target("CarrotToy")
-    set_kind("binary")
-    add_files("src/**.cpp")
-    add_headerfiles("src/Runtime/Public/**.h")
-    add_includedirs("src/Runtime/Public")
-    
-    -- Link required packages
-    add_packages("glfw", "glad", "glm", "imgui", "stb", "directxshadercompiler")
-    
-    -- Platform-specific settings
-    if is_plat("windows") then
-        add_syslinks("opengl32", "gdi32", "user32", "shell32")
-    elseif is_plat("linux") then
-        add_syslinks("GL", "pthread", "dl", "X11")
-    elseif is_plat("macosx") then
-        add_frameworks("OpenGL", "Cocoa", "IOKit", "CoreVideo")
-    end
-    
+
+option("module_kind")
+    set_default("static")
+    set_showmenu(true)
+    set_description("Build modules as shared or static (shared/static)")
+    add_defines("CARROT_BUILD_SHARED")
+option_end()
+rule("utils.compile_shaders")
     after_build(function (target)
         local projdir = os.projectdir()
         local srcdir = path.join(projdir, "shaders")
@@ -44,34 +34,32 @@ target("CarrotToy")
         os.rm(outdir)
         os.mkdir(outdir)
 
-        -- helper: get filename only
-        local function filename(p)
-            local n = p:match("[^/\\]+$")
-            return n or p
-        end
-        -- locate dxc: prefer xmake-installed package 'directxshadercompiler'
+        -- locate dxc
         local dxc_path = nil
-        -- Try to find directxshadercompiler in target packages
-        local installdir = target:pkgs()["directxshadercompiler"]:installdir()
-        if installdir and os.isdir(installdir) then
-            local pattern = is_plat("windows") and "dxc*.exe" or "dxc*"
-            for _, p in ipairs(os.files(path.join(installdir, "**", pattern))) do
-                if os.isfile(p) then
-                    dxc_path = p
-                    break
+        local pkg = target:pkg("directxshadercompiler")
+        if pkg then
+            local installdir = pkg:installdir()
+            if installdir and os.isdir(installdir) then
+                local pattern = is_plat("windows") and "dxc*.exe" or "dxc*"
+                for _, p in ipairs(os.files(path.join(installdir, "**", pattern))) do
+                    if os.isfile(p) then
+                        dxc_path = p
+                        break
+                    end
                 end
             end
         end
 
         if not dxc_path then
-             print("warning: directxshadercompiler package not found in target packages!")
+             print("warning: directxshadercompiler package not found!")
         else
              print("using dxc from package: " .. dxc_path)
         end
 
+        import("core.base.option")
         for _, f in ipairs(os.files(path.join(srcdir, "**"))) do
             if os.isfile(f) then
-                local name = filename(f)
+                local name = path.filename(f)
                 local lname = name:lower()
 
                 if lname:sub(-5) == '.hlsl' then
@@ -91,14 +79,13 @@ target("CarrotToy")
                     if dxc_path then
                         local cmd = string.format('"%s" -T %s -E %s -spirv -Fo "%s" "%s"', dxc_path, stage, entry, outspv, f)
                         print('> ' .. cmd)
-                        -- run safely, capture output; judge success by produced file
                         local out = nil
                         try {
                             function () out = os.iorun(cmd) end,
                             catch { function (e) out = tostring(e) end }
                         }
                         if not os.isfile(outspv) then
-                            print('warning: dxc failed for ' .. f .. ' (output: ' .. (out or "<no output>") .. '), copying original file')
+                            print('warning: dxc failed for ' .. f .. ', copying original')
                             os.cp(f, outdir)
                         end
                     else
@@ -110,7 +97,9 @@ target("CarrotToy")
             end
         end
     end)
-    
-    set_targetdir("build/bin")
-    set_objectdir("build/obj")
-target_end()
+rule_end()
+
+includes("src/Runtime/Launch")
+includes("src/Runtime/Core")
+includes("src/DefaultGame")
+

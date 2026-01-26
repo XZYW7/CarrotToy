@@ -2,7 +2,6 @@
 #include "CoreUtils.h"
 
 #include "ModuleInterface.h"
-#include "Luanch.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -62,11 +61,20 @@ public:
     /** Global registrant object for this module when linked statically */ \
     ModuleImplClass* CreateModule() { return new ModuleImplClass(); } \
     static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName) );
-
+    
+    /* // We use MONOLITHIC Mode to load all modules statically, because only a few modules
+    // Referenced in Engine\Source\Runtime\Core\Public\Modules\ModuleManager.h
+    // static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName) );
+    static IModuleInterface* Initialize##ModuleName##Module() \
+    { \
+        return new ModuleImplClass(); \
+    } \
+    static FModuleInitializerEntry ModuleName##InitializerEntry(TEXT(#ModuleName), Initialize##ModuleName##Module); \
+    */
 
 
 #define IMPLEMENT_APPLICATION( ModuleName, GameName ) \
     /* For monolithic builds, we must statically define the game's name string (See Core.h) */ \
     TCHAR GInternalProjectName[64] = TEXT( GameName ); \
-    IMPLEMENT_MODULE(FDefaultModule, ModuleName) \
+    IMPLEMENT_MODULE(FDefaultModule, ModuleName); \
     FMainLoop GEngineLoop; 

@@ -13,4 +13,22 @@
 
 # MISC
 - [ ] 清理代码中残留的gl和glfw
-  
+
+# Structure
+```mermaid
+classDiagram
+    class Engine {
+      +initialize()
+      +shutdown()
+    }
+    class ModuleManager {
+      +LoadModule(name)
+      +UnloadModule(name)
+    }
+    class Module {
+      +initialize()
+      +shutdown()
+    }
+    Engine --> ModuleManager : uses
+    ModuleManager --> Module : manages
+```
