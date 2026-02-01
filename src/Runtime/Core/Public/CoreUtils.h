@@ -19,6 +19,10 @@
  * using standard C++ narrow strings.
  * 
  * Usage: TEXT("Hello World") expands to "Hello World"
+ * 
+ * Note: This differs from UE's TEXT macro which may use L prefix (L"string") on some platforms.
+ * If migrating from UE code that expects wide strings, you may need to adapt string handling.
+ * For CarrotToy's purposes, narrow strings (UTF-8) are sufficient.
  */
 #define TEXT(X) X
 
