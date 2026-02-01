@@ -49,11 +49,19 @@ void FMainLoop::LoadPreInitModules()
 {
     LOG("FMainLoop: Loading PreInit Modules");
     
-    // Load engine modules first
+    // Load application module first (if registered)
+    // Get all registered application modules and load them
+    const auto& appModules = FModuleManager::Get().GetModulesByType(EModuleType::Application);
+    for (const auto& modName : appModules) {
+        LOG("FMainLoop: Loading Application Module: " << modName);
+        FModuleManager::Get().LoadModule(modName);
+    }
+    
+    // Try to load engine modules (optional - not all apps have these)
     FModuleManager::Get().LoadModule("CoreEngine");
     FModuleManager::Get().LoadModule("RHI");
     
-    // Load game modules
+    // Try to load game modules (optional - not all apps have these)
     FModuleManager::Get().LoadModule("DefaultGame");
     FModuleManager::Get().LoadModule("GameplayModule");
     
@@ -62,6 +70,12 @@ void FMainLoop::LoadPreInitModules()
     // FModuleManager::Get().DiscoverPlugins(Path::ProjectDir() + "/Plugins");
     
     // List all loaded modules by type
+    LOG("FMainLoop: Loaded Application Modules:");
+    const auto& loadedAppMods = FModuleManager::Get().GetModulesByType(EModuleType::Application);
+    for (const auto& modName : loadedAppMods) {
+        LOG("  - " << modName);
+    }
+    
     LOG("FMainLoop: Loaded Engine Modules:");
     const auto& engineMods = FModuleManager::Get().GetModulesByType(EModuleType::Engine);
     for (const auto& modName : engineMods) {
