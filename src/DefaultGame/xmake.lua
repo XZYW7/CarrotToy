@@ -6,16 +6,16 @@ target("DefaultGame")
     set_kind("binary") -- 它是最终的可执行文件
     
     add_files("Private/**.cpp")
-    add_deps("Core", "RHI", "Launch", "Editor")
+    add_deps("Renderer", "Launch")
 
     -- 1. 应用依赖包
-    add_packages("directxshadercompiler")
+    add_packages("glfw", "directxshadercompiler")
 
     -- 2. 应用系统库 (从根目录移过来的)
     if is_plat("windows") then
         add_syslinks("opengl32", "gdi32", "user32", "shell32")
-        -- 强制链接 Launch 的 main 和 Core 的模块注册
-        add_ldflags("/WHOLEARCHIVE:Launch.lib", "/WHOLEARCHIVE:Core.lib", "/WHOLEARCHIVE:RHI.lib", {force = true})
+        -- 强制链接 Launch 的 main（包含全局对象）
+        add_ldflags("/WHOLEARCHIVE:Launch.lib", {force = true})
     elseif is_plat("linux") then
         add_syslinks("GL", "pthread", "dl", "X11")
     elseif is_plat("macosx") then
