@@ -118,8 +118,13 @@ void ExampleModuleUsage()
     IModuleInterface* moduleInterface = FModuleManager::Get().GetModule("MyCustomModule");
     if (moduleInterface)
     {
-        auto* customModule = static_cast<FMyCustomModule*>(moduleInterface);
-        customModule->DoSomething();
+        // Use dynamic_cast for safe type conversion
+        // 使用 dynamic_cast 进行安全的类型转换
+        auto* customModule = dynamic_cast<FMyCustomModule*>(moduleInterface);
+        if (customModule)
+        {
+            customModule->DoSomething();
+        }
     }
     else
     {
