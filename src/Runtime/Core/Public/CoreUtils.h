@@ -9,6 +9,7 @@
 #pragma region FuncDefs
 
 #define LOG(X) std::cout << X << std::endl
+#define TEXT(X) X
 
 #pragma endregion // FuncDefs
 
@@ -53,6 +54,12 @@ public:
     const T& operator[](size_t index) const {
         return data[index];
     }
+
+    // Iterator support for range-based for loops
+    typename FVector<T>::iterator begin() { return data.begin(); }
+    typename FVector<T>::iterator end() { return data.end(); }
+    typename FVector<T>::const_iterator begin() const { return data.begin(); }
+    typename FVector<T>::const_iterator end() const { return data.end(); }
 
 private:
     FVector<T> data;

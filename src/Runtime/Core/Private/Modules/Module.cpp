@@ -2,6 +2,10 @@
 #include <iostream>
 #include <filesystem>
 
+#if !defined(_WIN32)
+#include <dlfcn.h>
+#endif
+
 FModuleManager& FModuleManager::Get()
 {
     static FModuleManager mgr;

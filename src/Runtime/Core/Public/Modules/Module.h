@@ -92,13 +92,13 @@ public:
 // Implement a module (default to Engine type)
 #define IMPLEMENT_MODULE( ModuleImplClass, ModuleName ) \
     /** Global registrant object for this module when linked statically */ \
-    ModuleImplClass* CreateModule() { return new ModuleImplClass(); } \
+    static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
     static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Engine );
 
 // Implement a game module
 #define IMPLEMENT_GAME_MODULE( ModuleImplClass, ModuleName ) \
     /** Global registrant object for this game module when linked statically */ \
-    ModuleImplClass* CreateModule() { return new ModuleImplClass(); } \
+    static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
     static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Game );
 
 // Implement an application module (with application entry point)
@@ -106,7 +106,7 @@ public:
     /** For monolithic builds, we must statically define the game's name string */ \
     TCHAR GInternalProjectName[64] = TEXT( GameName ); \
     /** Global registrant object for this application module */ \
-    ModuleImplClass* CreateModule() { return new ModuleImplClass(); } \
+    static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
     static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Application ); \
     FMainLoop GEngineLoop;
     
