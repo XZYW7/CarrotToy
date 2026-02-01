@@ -128,7 +128,7 @@ void ExampleModuleUsage()
     }
     else
     {
-        LOG("MyCustomModule is not registered. To use it, uncomment IMPLEMENT_GAME_MODULE in ModuleExamples.cpp");
+        LOG("MyCustomModule is not registered. To use it, uncomment IMPLEMENT_GAME_MODULE in src/Runtime/Core/Private/Modules/ModuleExamples.cpp");
     }
 
     // 4. Query modules by type
