@@ -745,9 +745,6 @@ void OpenGLRHIDevice::drawIndexed(PrimitiveTopology topology, uint32_t indexCoun
 std::shared_ptr<IRHIDevice> createRHIDevice(GraphicsAPI api) {
     LOG("Creating RHI Device for API: " << static_cast<int>(api));
     return std::make_shared<OpenGLRHIDevice>();
-
-    return nullptr;
-
 }
 
 // Global RHI device instance for convenience
