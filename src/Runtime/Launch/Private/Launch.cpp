@@ -60,8 +60,8 @@ void FMainLoop::LoadPreInitModules()
     
     // Try to load engine modules (optional - not all apps have these)
     FModuleManager::Get().LoadModule("CoreEngine");
-    FModuleManager::Get().LoadModule("RHI");
-    FModuleManager::Get().LoadModule("Editor");
+    // Note: RHI is not a module, it's linked normally as part of Core
+    // Note: Editor is not a module, it's a tool library linked directly to applications that need it
     
     // Example: Discover and list available plugins
     // In a real project, you would specify your plugins directory

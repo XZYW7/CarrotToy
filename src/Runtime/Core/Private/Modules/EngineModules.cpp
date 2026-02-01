@@ -16,17 +16,4 @@ void FCoreEngineModule::ShutdownModule()
 	// Clean up core systems
 }
 
-// RHI Module Implementation
-void FRHIModule::StartupModule()
-{
-	LOG("RHIModule: Startup");
-	LOG("RHIModule: Initializing Render Hardware Interface");
-	// Initialize RHI system: device creation, context setup, etc.
-}
-
-void FRHIModule::ShutdownModule()
-{
-	LOG("RHIModule: Shutdown");
-	LOG("RHIModule: Shutting down Render Hardware Interface");
-	// Clean up RHI resources
-}
+// Note: RHI is not a module - it's part of the Core library and linked normally
