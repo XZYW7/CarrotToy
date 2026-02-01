@@ -17,4 +17,17 @@ public:
 	virtual bool IsGameModule() const override { return false; }
 };
 
-// Note: RHI is not a module - it's part of the Core library and linked normally
+/**
+ * RHI (Rendering Hardware Interface) Module
+ * Handles graphics API abstraction and device management
+ */
+class FRHIModule : public IModuleInterface
+{
+public:
+	virtual ~FRHIModule() override = default;
+
+	virtual void StartupModule() override;
+	virtual void ShutdownModule() override;
+	
+	virtual bool IsGameModule() const override { return false; }
+};
