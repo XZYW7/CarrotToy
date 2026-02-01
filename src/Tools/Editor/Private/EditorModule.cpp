@@ -1,6 +1,5 @@
 #include "EditorModule.h"
 #include "CoreUtils.h"
-#include "Modules/Module.h"
 
 void FEditorModule::StartupModule()
 {
@@ -16,5 +15,4 @@ void FEditorModule::ShutdownModule()
 	// Clean up editor systems
 }
 
-// Register the Editor module
-IMPLEMENT_MODULE(FEditorModule, Editor)
+// Note: Editor is not registered as a module - it's a tool library linked directly

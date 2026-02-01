@@ -17,17 +17,4 @@ public:
 	virtual bool IsGameModule() const override { return false; }
 };
 
-/**
- * RHI (Render Hardware Interface) Engine Module
- * Manages rendering abstraction layer
- */
-class FRHIModule : public IModuleInterface
-{
-public:
-	virtual ~FRHIModule() override = default;
-
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
-	
-	virtual bool IsGameModule() const override { return false; }
-};
+// Note: RHI is not a module - it's part of the Core library and linked normally
