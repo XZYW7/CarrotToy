@@ -1,21 +1,21 @@
 # Module System Quick Reference
 
 ## Module Types
-- `EModuleType::Engine` - Core engine functionality
-- `EModuleType::Game` - Game-specific code
+- `EModuleType::Engine` - Core engine functionality (Core, RHI, Editor, etc.)
+- `EModuleType::Game` - **Deprecated** - Use Application type instead
 - `EModuleType::Plugin` - Optional loadable extensions
-- `EModuleType::Application` - Application entry points
+- `EModuleType::Application` - Application entry points (one per executable)
 
 ## Registration Macros
 
 ```cpp
-// Engine module
+// Engine module (recommended for engine subsystems)
 IMPLEMENT_MODULE(FMyModule, MyModule)
 
-// Game module
-IMPLEMENT_GAME_MODULE(FMyGameModule, MyGameModule)
+// Game module (DEPRECATED - use IMPLEMENT_APPLICATION_MODULE instead)
+// IMPLEMENT_GAME_MODULE(FMyGameModule, MyGameModule)
 
-// Application module
+// Application module (recommended for executable targets)
 IMPLEMENT_APPLICATION_MODULE(FMyAppModule, MyApp, "MyAppName")
 ```
 
@@ -69,4 +69,6 @@ class IModuleInterface
 
 ## Shutdown Order
 
-Application → Game → Plugin → Engine
+Application → Plugin → Engine
+
+(Note: Game module type is deprecated)
