@@ -39,4 +39,4 @@ void FCustomModule::DoSomething()
 
 // Register the custom module as an application module
 // This creates the GEngineLoop instance and registers the module
-IMPLEMENT_APPLICATION_MODULE(FCustomModule, CustomModule, "CustomModuleProject")
+IMPLEMENT_APPLICATION_MODULE(FCustomModule, CustomModule, "CustomModule")
