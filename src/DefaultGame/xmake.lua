@@ -9,7 +9,7 @@ target("DefaultGame")
     add_deps("Core", "Launch")
 
     -- 1. 应用依赖包
-    add_packages("glfw", "directxshadercompiler")
+    add_packages("directxshadercompiler")
 
     -- 2. 应用系统库 (从根目录移过来的)
     if is_plat("windows") then
