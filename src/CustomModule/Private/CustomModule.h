@@ -5,41 +5,23 @@
  * how to create an independent module as a separate output target.
  */
 
-#ifndef CUSTOM_MODULE_H
-#define CUSTOM_MODULE_H
+#pragma once
+#include "Modules/ModuleInterface.h"
 
-#include "Modules/Module.h"
-#include "Modules/EngineModules.h"
-#include "CoreUtils.h"
-
-// Custom Module implementation
+/**
+ * Custom Application Module
+ * Example of a custom application with its own entry point via IMPLEMENT_APPLICATION_MODULE
+ */
 class FCustomModule : public IModuleInterface
 {
 public:
-    virtual void StartupModule() override
-    {
-        LOG("CustomModule: Starting up");
-        // Initialize your custom systems here
-        // 在此初始化你的自定义系统
-    }
+    virtual ~FCustomModule() override = default;
 
-    virtual void ShutdownModule() override
-    {
-        LOG("CustomModule: Shutting down");
-        // Cleanup your custom systems here
-        // 在此清理你的自定义系统
-    }
-
-    virtual bool IsGameModule() const override
-    {
-        return true;  // This is a game module
-    }
-
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
+    
+    virtual bool IsGameModule() const override { return false; }
+    
     // Custom functionality
-    void DoSomething()
-    {
-        LOG("CustomModule: Doing something awesome!");
-    }
+    void DoSomething();
 };
-
-#endif // CUSTOM_MODULE_H
