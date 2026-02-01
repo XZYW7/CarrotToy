@@ -12,6 +12,8 @@ namespace CarrotToy {
 Renderer::Renderer() 
     : platform(nullptr), window(nullptr), width(800), height(600), 
       renderMode(RenderMode::Rasterization),
+      sphereVertexArray(nullptr), sphereVertexBuffer(nullptr), sphereIndexBuffer(nullptr),
+      previewFramebuffer(nullptr),
       sphereVAO(0), sphereVBO(0), sphereEBO(0),
       previewFBO(0), previewTexture(0) {
 }
@@ -85,8 +87,11 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
         CarrotToy::RHI::setGlobalDevice(rhiDevice);
     }
 
-    glViewport(0, 0, width, height);
-    glEnable(GL_DEPTH_TEST);
+    // Use RHI to set viewport and depth test
+    if (rhiDevice) {
+        rhiDevice->setViewport(0, 0, width, height);
+        rhiDevice->setDepthTest(true);
+    }
     
     setupPreviewGeometry();
     setupFramebuffer();
@@ -95,6 +100,13 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
 }
 
 void Renderer::shutdown() {
+    // Release RHI resources
+    sphereVertexArray.reset();
+    sphereVertexBuffer.reset();
+    sphereIndexBuffer.reset();
+    previewFramebuffer.reset();
+    
+    // Fallback: clean up legacy OpenGL resources if they still exist
     if (sphereVAO) glDeleteVertexArrays(1, &sphereVAO);
     if (sphereVBO) glDeleteBuffers(1, &sphereVBO);
     if (sphereEBO) glDeleteBuffers(1, &sphereEBO);
@@ -110,8 +122,16 @@ void Renderer::shutdown() {
 }
 
 void Renderer::beginFrame() {
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // Use RHI for clearing
+    auto rhiDevice = CarrotToy::RHI::getGlobalDevice();
+    if (rhiDevice) {
+        rhiDevice->clearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        rhiDevice->clear(true, true, false);
+    } else {
+        // Fallback to direct OpenGL calls
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
 }
 
 void Renderer::endFrame() {
@@ -145,10 +165,15 @@ void Renderer::renderMaterialPreview(std::shared_ptr<Material> material) {
     float viewPos[3] = {0.0f, 0.0f, 3.0f};
     shader->setLightData(lightPos, lightColor, viewPos);
     
-    // Render sphere
-    if (sphereVAO) {
+    // Render sphere using RHI if available
+    auto rhiDevice = CarrotToy::RHI::getGlobalDevice();
+    if (sphereVertexArray && rhiDevice) {
+        sphereVertexArray->bind();
+        rhiDevice->drawIndexed(CarrotToy::RHI::PrimitiveTopology::TriangleList, 50 * 50 * 6, 0);
+        sphereVertexArray->unbind();
+    } else if (sphereVAO) {
+        // Fallback to legacy OpenGL
         glBindVertexArray(sphereVAO);
-        // Calculate actual element count: latitudes * longitudes * 6 (2 triangles per quad)
         glDrawElements(GL_TRIANGLES, 50 * 50 * 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
@@ -232,43 +257,108 @@ void Renderer::setupPreviewGeometry() {
         }
     }
     
-    glGenVertexArrays(1, &sphereVAO);
-    glGenBuffers(1, &sphereVBO);
-    glGenBuffers(1, &sphereEBO);
+    // Try to create RHI resources
+    auto rhiDevice = CarrotToy::RHI::getGlobalDevice();
+    if (rhiDevice) {
+        // Create vertex buffer using RHI
+        CarrotToy::RHI::BufferDesc vbDesc;
+        vbDesc.type = CarrotToy::RHI::BufferType::Vertex;
+        vbDesc.usage = CarrotToy::RHI::BufferUsage::Static;
+        vbDesc.size = vertices.size() * sizeof(float);
+        vbDesc.initialData = vertices.data();
+        sphereVertexBuffer = rhiDevice->createBuffer(vbDesc);
+        
+        // Create index buffer using RHI
+        CarrotToy::RHI::BufferDesc ibDesc;
+        ibDesc.type = CarrotToy::RHI::BufferType::Index;
+        ibDesc.usage = CarrotToy::RHI::BufferUsage::Static;
+        ibDesc.size = indices.size() * sizeof(unsigned int);
+        ibDesc.initialData = indices.data();
+        sphereIndexBuffer = rhiDevice->createBuffer(ibDesc);
+        
+        // Create vertex array using RHI
+        sphereVertexArray = rhiDevice->createVertexArray();
+        if (sphereVertexArray) {
+            sphereVertexArray->bind();
+            sphereVertexArray->setVertexBuffer(sphereVertexBuffer.get(), 0);
+            sphereVertexArray->setIndexBuffer(sphereIndexBuffer.get());
+            
+            // Position attribute
+            CarrotToy::RHI::VertexAttribute posAttr;
+            posAttr.location = 0;
+            posAttr.binding = 0;
+            posAttr.offset = 0;
+            posAttr.componentCount = 3;
+            posAttr.stride = 6 * sizeof(float);
+            posAttr.normalized = false;
+            sphereVertexArray->setVertexAttribute(posAttr);
+            
+            // Normal attribute
+            CarrotToy::RHI::VertexAttribute normAttr;
+            normAttr.location = 1;
+            normAttr.binding = 0;
+            normAttr.offset = 3 * sizeof(float);
+            normAttr.componentCount = 3;
+            normAttr.stride = 6 * sizeof(float);
+            normAttr.normalized = false;
+            sphereVertexArray->setVertexAttribute(normAttr);
+            
+            sphereVertexArray->unbind();
+        }
+    }
     
-    glBindVertexArray(sphereVAO);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, sphereVBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-    
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-    
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    
-    // Normal attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    
-    glBindVertexArray(0);
+    // Fallback: Create legacy OpenGL resources if RHI failed
+    if (!sphereVertexArray) {
+        glGenVertexArrays(1, &sphereVAO);
+        glGenBuffers(1, &sphereVBO);
+        glGenBuffers(1, &sphereEBO);
+        
+        glBindVertexArray(sphereVAO);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, sphereVBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+        
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+        
+        // Position attribute
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        
+        // Normal attribute
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        
+        glBindVertexArray(0);
+    }
 }
 
 void Renderer::setupFramebuffer() {
-    // Setup framebuffer for preview rendering
-    glGenFramebuffers(1, &previewFBO);
-    glGenTextures(1, &previewTexture);
+    // Try to create framebuffer using RHI
+    auto rhiDevice = CarrotToy::RHI::getGlobalDevice();
+    if (rhiDevice) {
+        CarrotToy::RHI::FramebufferDesc fbDesc;
+        fbDesc.width = 512;
+        fbDesc.height = 512;
+        fbDesc.hasDepthStencil = true;
+        previewFramebuffer = rhiDevice->createFramebuffer(fbDesc);
+    }
     
-    glBindTexture(GL_TEXTURE_2D, previewTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, previewFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, previewTexture, 0);
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // Fallback: Setup framebuffer for preview rendering using legacy OpenGL
+    if (!previewFramebuffer) {
+        glGenFramebuffers(1, &previewFBO);
+        glGenTextures(1, &previewTexture);
+        
+        glBindTexture(GL_TEXTURE_2D, previewTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, previewFBO);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, previewTexture, 0);
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 }
 
 void Renderer::exportSceneForRayTracing(const std::string& outputPath) {

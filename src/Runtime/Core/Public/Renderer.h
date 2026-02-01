@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include "Platform/Platform.h"
+#include "RHI/RHI.h"
 
 namespace CarrotToy {
 
@@ -49,6 +50,13 @@ private:
     int width, height;
     RenderMode renderMode;
     
+    // RHI resources (modern path)
+    std::shared_ptr<RHI::IRHIVertexArray> sphereVertexArray;
+    std::shared_ptr<RHI::IRHIBuffer> sphereVertexBuffer;
+    std::shared_ptr<RHI::IRHIBuffer> sphereIndexBuffer;
+    std::shared_ptr<RHI::IRHIFramebuffer> previewFramebuffer;
+    
+    // Legacy OpenGL resources (fallback)
     unsigned int sphereVAO, sphereVBO, sphereEBO;
     unsigned int previewFBO, previewTexture;
     

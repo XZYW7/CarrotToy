@@ -744,10 +744,41 @@ void OpenGLRHIDevice::drawIndexed(PrimitiveTopology topology, uint32_t indexCoun
 // Factory function implementation
 std::shared_ptr<IRHIDevice> createRHIDevice(GraphicsAPI api) {
     LOG("Creating RHI Device for API: " << static_cast<int>(api));
-    return std::make_shared<OpenGLRHIDevice>();
-
-    return nullptr;
-
+    
+    switch (api) {
+        case GraphicsAPI::OpenGL:
+            return std::make_shared<OpenGLRHIDevice>();
+            
+        case GraphicsAPI::Vulkan: {
+            // Vulkan support (stub implementation for now)
+            LOG("Vulkan RHI requested - using stub implementation");
+            // Note: Would need to include VulkanRHI.h and link Vulkan SDK for full support
+            // return std::make_shared<VulkanRHIDevice>();
+            std::cerr << "Vulkan backend not fully implemented - falling back to OpenGL" << std::endl;
+            return std::make_shared<OpenGLRHIDevice>();
+        }
+        
+        case GraphicsAPI::DirectX12: {
+            // DirectX 12 support (stub implementation for now)
+            LOG("DirectX 12 RHI requested - using stub implementation");
+            // Note: Would need to include D3D12RHI.h and link D3D12.lib for full support
+            // return std::make_shared<D3D12RHIDevice>();
+            std::cerr << "DirectX 12 backend not fully implemented - falling back to OpenGL" << std::endl;
+            return std::make_shared<OpenGLRHIDevice>();
+        }
+        
+        case GraphicsAPI::DirectX11:
+            LOG("DirectX 11 not implemented - falling back to OpenGL");
+            return std::make_shared<OpenGLRHIDevice>();
+            
+        case GraphicsAPI::Metal:
+            LOG("Metal not implemented - falling back to OpenGL");
+            return std::make_shared<OpenGLRHIDevice>();
+            
+        default:
+            std::cerr << "Unknown graphics API - falling back to OpenGL" << std::endl;
+            return std::make_shared<OpenGLRHIDevice>();
+    }
 }
 
 // Global RHI device instance for convenience
