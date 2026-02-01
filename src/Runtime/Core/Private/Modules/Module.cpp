@@ -43,6 +43,7 @@ bool FModuleManager::LoadModule(const FName& name)
     if (it == modules.end()) {
         // Module not found - this is not necessarily an error
         // Some applications may not have all modules registered
+        LOG("ModuleManager: Module " << name << " not found in registry");
         return false;
     }
     

@@ -5,19 +5,32 @@
 CarrotToy implements a module management mechanism inspired by Unreal Engine, providing:
 - **Code Loading**: Dynamic and static module loading
 - **Plugin Management**: Plugin discovery and lifecycle management
-- **Project Separation**: Distinct management for Engine and Game modules
+- **Project Separation**: Distinct management for Engine and Application modules
 - **Application Modules**: Special module type for standalone applications
 
 ## Architecture
+
+### Important Architecture Notes
+
+**Application vs Game Modules**: In CarrotToy, each executable target (like DefaultGame or TestRHIApp) is an Application Module, not a Game Module. This is because:
+- Each target represents a complete application with its own entry point
+- An application only starts one program at a time
+- The concept of "Game Module" as a sub-module of an application is redundant
+
+Therefore, the recommended approach is:
+- Use **Application Modules** for each executable target (e.g., DefaultGame, TestRHIApp)
+- Use **Engine Modules** for engine subsystems (e.g., Core, RHI, Editor)
+- Use **Plugin Modules** for optional extensions
+- The **Game** module type is deprecated and should not be used
 
 ### Module Types
 
 The system supports four module types (`EModuleType`):
 
-1. **Engine Modules**: Core engine functionality (rendering, physics, etc.)
-2. **Game Modules**: Game-specific logic and content
+1. **Engine Modules**: Core engine functionality (rendering, physics, editor tools, etc.)
+2. **Game Modules**: *Deprecated - use Application Modules instead*
 3. **Plugin Modules**: Optional, loadable extensions
-4. **Application Modules**: Application entry points for specialized tasks
+4. **Application Modules**: Application entry points (one per executable target)
 
 ### Module Lifecycle
 
@@ -229,21 +242,30 @@ src/
 │   │   │       ├── ModuleInterface.h
 │   │   │       ├── Module.h
 │   │   │       ├── ModuleDescriptor.h
-│   │   │       ├── EngineModules.h
-│   │   │       └── TestApplicationModule.h
+│   │   │       └── EngineModules.h
 │   │   └── Private/
 │   │       ├── Modules/
 │   │       │   ├── Module.cpp
-│   │       │   ├── EngineModules.cpp
-│   │       │   └── TestApplicationModule.cpp
+│   │       │   └── EngineModules.cpp
 │   │       └── CoreModule.cpp
+│   ├── Editor/                  # Editor module (material editor, UI tools)
+│   │   ├── Public/
+│   │   │   ├── EditorModule.h
+│   │   │   └── MaterialEditor.h
+│   │   └── Private/
+│   │       ├── EditorModule.cpp
+│   │       └── MaterialEditor.cpp
 │   └── Launch/                  # Application launcher
 │       └── ...
-└── DefaultGame/                 # Game project
+├── DefaultGame/                 # Default game application
+│   └── Private/
+│       ├── DefaultGameModule.h
+│       └── DefualtGame.cpp
+└── TestRHIApp/                  # RHI test application
     └── Private/
-        ├── GameModules.h
-        ├── GameModules.cpp
-        └── DefualtGame.cpp
+        ├── TestApplicationModule.h
+        ├── TestApplicationModule.cpp
+        └── TestRHIApp.cpp
 ```
 
 ## Best Practices

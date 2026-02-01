@@ -3,6 +3,7 @@
 #include "Renderer.h"
 
 #include "Material.h"
+#include "EditorModule.h"
 #include "MaterialEditor.h"
 #include <iostream>
 #include "Modules/Module.h"
@@ -60,10 +61,7 @@ void FMainLoop::LoadPreInitModules()
     // Try to load engine modules (optional - not all apps have these)
     FModuleManager::Get().LoadModule("CoreEngine");
     FModuleManager::Get().LoadModule("RHI");
-    
-    // Try to load game modules (optional - not all apps have these)
-    FModuleManager::Get().LoadModule("DefaultGame");
-    FModuleManager::Get().LoadModule("GameplayModule");
+    FModuleManager::Get().LoadModule("Editor");
     
     // Example: Discover and list available plugins
     // In a real project, you would specify your plugins directory
