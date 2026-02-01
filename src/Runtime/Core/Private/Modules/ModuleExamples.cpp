@@ -2,7 +2,16 @@
  * Module System Usage Examples
  * 模块系统使用示例
  * 
- * This file demonstrates practical usage of the CarrotToy Module System
+ * This file demonstrates practical usage of the CarrotToy Module System.
+ * 
+ * IMPORTANT: The example modules in this file are NOT automatically registered.
+ * They are provided as code examples and documentation only. If you want to use
+ * any of these example modules in your application, copy the code to your own
+ * module file and register it there using the appropriate IMPLEMENT_*_MODULE macro.
+ * 
+ * 重要提示：此文件中的示例模块不会自动注册。它们仅作为代码示例和文档提供。
+ * 如果您想在应用程序中使用这些示例模块，请将代码复制到您自己的模块文件中，
+ * 并在那里使用适当的 IMPLEMENT_*_MODULE 宏进行注册。
  */
 
 #include "Modules/Module.h"
@@ -42,7 +51,12 @@ public:
 
 // Register the custom module
 // 注册自定义模块
-IMPLEMENT_GAME_MODULE(FMyCustomModule, MyCustomModule)
+// NOTE: This registration is commented out because example modules should not be
+// automatically loaded in production applications. Uncomment this line only if you
+// want to use MyCustomModule in your specific application.
+// 注意：此注册已被注释掉，因为示例模块不应在生产应用程序中自动加载。
+// 仅当您想在特定应用程序中使用 MyCustomModule 时，才取消注释此行。
+// IMPLEMENT_GAME_MODULE(FMyCustomModule, MyCustomModule)
 
 // Example 2: Creating a plugin module
 // 示例2: 创建一个插件模块
@@ -82,7 +96,11 @@ void ExampleModuleUsage()
     LOG("\n[Example 1] Loading modules:");
     FModuleManager::Get().LoadModule("CoreEngine");
     FModuleManager::Get().LoadModule("RHI");
-    FModuleManager::Get().LoadModule("MyCustomModule");
+    // Note: MyCustomModule is not registered by default (see top of file)
+    // If you want to use it, uncomment the IMPLEMENT_GAME_MODULE line above
+    // 注意：MyCustomModule 默认不注册（见文件顶部）
+    // 如果要使用它，请取消注释上面的 IMPLEMENT_GAME_MODULE 行
+    // FModuleManager::Get().LoadModule("MyCustomModule");
 
     // 2. Check if a module is loaded
     // 2. 检查模块是否已加载
@@ -95,12 +113,18 @@ void ExampleModuleUsage()
     // 3. Get and use a module
     // 3. 获取并使用模块
     LOG("\n[Example 3] Using a module:");
+    // Note: MyCustomModule is not registered by default, so this will be nullptr
+    // 注意：MyCustomModule 默认未注册，因此这将为 nullptr
     auto* customModule = static_cast<FMyCustomModule*>(
         FModuleManager::Get().GetModule("MyCustomModule")
     );
     if (customModule)
     {
         customModule->DoSomething();
+    }
+    else
+    {
+        LOG("MyCustomModule is not registered. To use it, uncomment IMPLEMENT_GAME_MODULE in ModuleExamples.cpp");
     }
 
     // 4. Query modules by type
