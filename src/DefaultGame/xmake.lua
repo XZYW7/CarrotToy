@@ -6,7 +6,7 @@ target("DefaultGame")
     set_kind("binary") -- 它是最终的可执行文件
     
     add_files("Private/**.cpp")
-    add_deps("Core", "Launch")
+    add_deps("Core", "Launch", "Editor")
 
     -- 1. 应用依赖包
     add_packages("directxshadercompiler")
