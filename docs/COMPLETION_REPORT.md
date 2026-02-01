@@ -38,10 +38,12 @@ The CarrotToy Module Management System has been successfully implemented and pas
    - `FGameplayModule` - 游戏玩法系统
 
 3. **应用程序模块** / Application Module
-   - `FTestApplicationModule` - **RHI测试应用模块**
+   - `TestRHIApp` - **RHI测试独立应用程序**
+     - 包含 `FTestApplicationModule` 模块
      - `InitializeRHITest()` - 初始化RHI测试环境
      - `RunRHITests()` - 运行RHI测试套件
      - `ShutdownRHITest()` - 清理RHI测试环境
+     - 作为独立应用程序运行，类似 DefaultGame
 
 ### ✅ 文档 / Documentation
 
@@ -89,16 +91,17 @@ IMPLEMENT_GAME_MODULE(FMyModule, MyModule)  // 游戏模块 / Game
 
 ### 3. RHI测试应用 / RHI Test Application
 
-```cpp
-// 加载测试应用 / Load test app
-FModuleManager::Get().LoadModule("TestApplication");
+TestRHIApp 现在是一个独立的应用程序：
 
-// 获取并运行测试 / Get and run tests
-auto* testApp = static_cast<FTestApplicationModule*>(
-    FModuleManager::Get().GetModule("TestApplication")
-);
-testApp->RunRHITests();
+```bash
+# 构建 TestRHIApp / Build TestRHIApp
+xmake build TestRHIApp
+
+# 运行 TestRHIApp / Run TestRHIApp
+xmake run TestRHIApp
 ```
+
+TestRHIApp 会在启动时自动运行 RHI 测试。它的结构类似于 DefaultGame。
 
 ---
 
@@ -114,16 +117,13 @@ src/Runtime/Core/
 │   └── Modules/
 │       ├── ModuleDescriptor.h (新增)
 │       ├── Module.h (修改)
-│       ├── EngineModules.h (新增)
-│       └── TestApplicationModule.h (新增)
+│       └── EngineModules.h (新增)
 ├── Private/
 │   ├── CoreModule.cpp (新增)
 │   └── Modules/
 │       ├── Module.cpp (修改)
 │       ├── EngineModules.cpp (新增)
-│       ├── TestApplicationModule.cpp (新增)
-│       ├── TestApplicationModule_Register.cpp (新增)
-│       └── ModuleExamples.cpp (新增)
+│       └── ModuleExamples.cpp (新增，已更新)
 ```
 
 ### 游戏模块 / Game Modules
@@ -132,6 +132,17 @@ src/Runtime/Core/
 src/DefaultGame/Private/
 ├── GameModules.h (新增)
 └── GameModules.cpp (新增)
+```
+
+### RHI 测试应用程序 / RHI Test Application
+
+```
+src/TestRHIApp/
+├── Private/
+│   ├── TestApplicationModule.h (新增)
+│   ├── TestApplicationModule.cpp (新增)
+│   └── TestRHIApp.cpp (新增)
+└── xmake.lua (新增)
 ```
 
 ### 启动器 / Launcher

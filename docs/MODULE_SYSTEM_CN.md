@@ -94,10 +94,12 @@ IMPLEMENT_APPLICATION_MODULE(FMyAppModule, MyApp, "MyAppName")
 - **FGameplayModule**: 游戏玩法系统模块
 
 #### 应用程序模块示例
-- **FTestApplicationModule**: RHI测试应用程序模块
+- **TestRHIApp**: RHI测试独立应用程序
+  - 包含 `FTestApplicationModule` 模块
   - `InitializeRHITest()`: 初始化RHI测试环境
   - `RunRHITests()`: 运行RHI测试套件
   - `ShutdownRHITest()`: 清理RHI测试环境
+  - 作为独立应用程序运行，类似 DefaultGame
 
 ## 使用方法
 
@@ -148,26 +150,19 @@ IMPLEMENT_MODULE(FMyModule, MyModule)
 FModuleManager::Get().LoadModule("MyModule");
 ```
 
-### 使用测试应用程序模块
+### 使用RHI测试应用程序
 
-```cpp
-// 加载测试应用程序模块
-FModuleManager::Get().LoadModule("TestApplication");
+TestRHIApp 现在是一个独立的应用程序，不再作为模块加载：
 
-// 获取模块实例
-auto* testApp = static_cast<FTestApplicationModule*>(
-    FModuleManager::Get().GetModule("TestApplication")
-);
+```bash
+# 构建 TestRHIApp
+xmake build TestRHIApp
 
-// 初始化RHI测试环境
-testApp->InitializeRHITest();
-
-// 运行RHI测试
-testApp->RunRHITests();
-
-// 清理
-testApp->ShutdownRHITest();
+# 运行 TestRHIApp
+xmake run TestRHIApp
 ```
+
+TestRHIApp 会在启动时自动运行 RHI 测试。它的结构类似于 DefaultGame，是一个完全独立的应用程序。
 
 ## 模块生命周期
 
@@ -203,23 +198,28 @@ src/
 │   │   │       ├── ModuleInterface.h       # 模块接口
 │   │   │       ├── Module.h                # 模块管理器
 │   │   │       ├── ModuleDescriptor.h      # 模块描述符
-│   │   │       ├── EngineModules.h         # 引擎模块示例
-│   │   │       └── TestApplicationModule.h # 测试应用模块
+│   │   │       └── EngineModules.h         # 引擎模块示例
 │   │   └── Private/
 │   │       ├── Modules/
-│   │       │   ├── Module.cpp                        # 模块管理器实现
-│   │       │   ├── EngineModules.cpp                 # 引擎模块实现
-│   │       │   ├── TestApplicationModule.cpp         # 测试应用实现
-│   │       │   └── TestApplicationModule_Register.cpp # 测试应用注册
+│   │       │   ├── Module.cpp              # 模块管理器实现
+│   │       │   ├── EngineModules.cpp       # 引擎模块实现
+│   │       │   └── ModuleExamples.cpp      # 使用示例
 │   │       └── CoreModule.cpp              # 核心模块注册
-│   └── Launch/                         # 应用启动器
+│   └── Launch/                             # 应用启动器
 │       └── Private/
-│           └── Launch.cpp              # 更新以使用新的模块系统
-└── DefaultGame/                        # 游戏项目
-    └── Private/
-        ├── GameModules.h               # 游戏模块定义
-        ├── GameModules.cpp             # 游戏模块实现
-        └── DefualtGame.cpp             # 游戏入口点
+│           └── Launch.cpp                  # 更新以使用新的模块系统
+├── DefaultGame/                            # 游戏项目示例
+│   ├── Private/
+│   │   ├── GameModules.h                   # 游戏模块定义
+│   │   ├── GameModules.cpp                 # 游戏模块实现
+│   │   └── DefualtGame.cpp                 # 游戏入口点
+│   └── xmake.lua                           # DefaultGame 构建配置
+└── TestRHIApp/                             # RHI 测试应用程序
+    ├── Private/
+    │   ├── TestApplicationModule.h         # 测试应用模块定义
+    │   ├── TestApplicationModule.cpp       # 测试应用模块实现
+    │   └── TestRHIApp.cpp                  # 测试应用入口点
+    └── xmake.lua                           # TestRHIApp 构建配置
 ```
 
 ## 文档
@@ -276,14 +276,22 @@ CoreEngineModule: Initializing core engine systems
 ...
 ```
 
-## 测试应用模块详解
+## RHI 测试应用程序详解
 
-`FTestApplicationModule` 是一个完整的应用程序模块示例，专门用于RHI测试：
+`TestRHIApp` 是一个完整的独立应用程序，专门用于RHI测试：
 
 ### 功能：
 - RHI测试环境初始化
 - 测试套件执行
 - 自动资源清理
+- 独立运行，不依赖其他应用程序
+
+### 结构：
+TestRHIApp 采用与 DefaultGame 相同的结构模式：
+- 位于 `src/TestRHIApp/` 目录
+- 有自己的 xmake.lua 构建配置
+- 依赖 Core 和 Launch 模块
+- 生成独立的可执行文件
 
 ### 使用场景：
 - 完善RHI后的功能测试
@@ -291,7 +299,19 @@ CoreEngineModule: Initializing core engine systems
 - 性能基准测试
 - 回归测试
 
+### 运行方法：
+
+```bash
+# 构建
+xmake build TestRHIApp
+
+# 运行
+xmake run TestRHIApp
+```
+
 ### 扩展示例：
+
+如需添加更多测试，修改 `TestApplicationModule.cpp` 中的 `RunRHITests()` 方法：
 
 ```cpp
 void FTestApplicationModule::RunRHITests()
