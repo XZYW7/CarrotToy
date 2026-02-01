@@ -2,6 +2,7 @@
 #include "CoreUtils.h"
 
 #include "ModuleInterface.h"
+#include "ModuleDescriptor.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -12,26 +13,57 @@ public:
 
 };
 
+/**
+ * Module information wrapper
+ */
+struct FModuleInfo
+{
+	FUniquePtr<IModuleInterface> ModuleInstance;
+	FModuleDescriptor Descriptor;
+	bool bIsLoaded = false;
+};
+
 class FModuleManager {
 public:
     static FModuleManager& Get();
 
-    // register module instance (for static-linked modules or after dynamic factory)
-    void RegisterModule(const FName& name, FUniquePtr<IModuleInterface> module);
+    // Register module instance (for static-linked modules or after dynamic factory)
+    void RegisterModule(const FName& name, FUniquePtr<IModuleInterface> module, 
+                       EModuleType type = EModuleType::Engine);
+    
+    // Get module by name
     IModuleInterface* GetModule(const FName& name);
+    
+    // Check if module is loaded
+    bool IsModuleLoaded(const FName& name) const;
+    
+    // Load module by name (searches in known module paths)
+    bool LoadModule(const FName& name);
+    
+    // Unload a specific module
     void UnloadModule(const FName& name);
+    
+    // Shutdown all modules
     void ShutdownAll();
 
-    bool LoadModule(const FName& name) {
-        return false;
-    }
-    // dynamic load from path (uses platform layer)
-    // FModuleManager::instance().LoadModuleDynamic("path/to/GameModule.dll")
+    // Dynamic load from path (uses platform layer)
+    // FModuleManager::Get().LoadModuleDynamic("path/to/GameModule.dll")
     bool LoadModuleDynamic(const FString& path);
+    
+    // Plugin management
+    void DiscoverPlugins(const FString& pluginDirectory);
+    bool LoadPlugin(const FName& pluginName);
+    void UnloadPlugin(const FName& pluginName);
+    TArray<FPluginDescriptor> GetAvailablePlugins() const;
+    
+    // Get all loaded modules by type
+    TArray<FName> GetModulesByType(EModuleType type) const;
     
 private:
     FModuleManager() = default;
-    FMap<FName, FUniquePtr<IModuleInterface>> modules;
+    FMap<FName, FModuleInfo> modules;
+    FMap<FName, FPluginDescriptor> availablePlugins;
+    FMap<FName, TArray<FName>> loadedPluginModules; // plugin name -> module names
 };
 
 
@@ -39,16 +71,16 @@ template< class ModuleClass >
 class FStaticallyLinkedModuleRegistrant
 {
 public:
-    FStaticallyLinkedModuleRegistrant(const FName& InModuleName)
+    FStaticallyLinkedModuleRegistrant(const FName& InModuleName, EModuleType InModuleType = EModuleType::Engine)
     {
-        FModuleManager::Get().RegisterModule(InModuleName, FUniquePtr<IModuleInterface>(CreateModule()));
+        FModuleManager::Get().RegisterModule(InModuleName, FUniquePtr<IModuleInterface>(CreateModule()), InModuleType);
     }
 
     // overload to accept literal/text (e.g. TEXT("ModuleName")) used by macros
-    FStaticallyLinkedModuleRegistrant(const TCHAR* InModuleName)
+    FStaticallyLinkedModuleRegistrant(const TCHAR* InModuleName, EModuleType InModuleType = EModuleType::Engine)
     {
         FName Name(InModuleName);
-        FModuleManager::Get().RegisterModule(Name, FUniquePtr<IModuleInterface>(CreateModule()));
+        FModuleManager::Get().RegisterModule(Name, FUniquePtr<IModuleInterface>(CreateModule()), InModuleType);
     }
 
     static IModuleInterface* CreateModule()
@@ -56,25 +88,29 @@ public:
         return new ModuleClass();
     }
 };
-// If we're linking monolithically we assume all modules are linked in with the main binary.
+
+// Implement a module (default to Engine type)
 #define IMPLEMENT_MODULE( ModuleImplClass, ModuleName ) \
     /** Global registrant object for this module when linked statically */ \
     ModuleImplClass* CreateModule() { return new ModuleImplClass(); } \
-    static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName) );
-    
-    /* // We use MONOLITHIC Mode to load all modules statically, because only a few modules
-    // Referenced in Engine\Source\Runtime\Core\Public\Modules\ModuleManager.h
-    // static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName) );
-    static IModuleInterface* Initialize##ModuleName##Module() \
-    { \
-        return new ModuleImplClass(); \
-    } \
-    static FModuleInitializerEntry ModuleName##InitializerEntry(TEXT(#ModuleName), Initialize##ModuleName##Module); \
-    */
+    static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Engine );
 
+// Implement a game module
+#define IMPLEMENT_GAME_MODULE( ModuleImplClass, ModuleName ) \
+    /** Global registrant object for this game module when linked statically */ \
+    ModuleImplClass* CreateModule() { return new ModuleImplClass(); } \
+    static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Game );
 
-#define IMPLEMENT_APPLICATION( ModuleName, GameName ) \
-    /* For monolithic builds, we must statically define the game's name string (See Core.h) */ \
+// Implement an application module (with application entry point)
+#define IMPLEMENT_APPLICATION_MODULE( ModuleImplClass, ModuleName, GameName ) \
+    /** For monolithic builds, we must statically define the game's name string */ \
     TCHAR GInternalProjectName[64] = TEXT( GameName ); \
-    IMPLEMENT_MODULE(FDefaultModule, ModuleName); \
-    FMainLoop GEngineLoop; 
+    /** Global registrant object for this application module */ \
+    ModuleImplClass* CreateModule() { return new ModuleImplClass(); } \
+    static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Application ); \
+    FMainLoop GEngineLoop;
+    
+// Legacy macro for backward compatibility
+#define IMPLEMENT_APPLICATION( ModuleName, GameName ) \
+    IMPLEMENT_APPLICATION_MODULE(FDefaultModule, ModuleName, GameName)
+ 

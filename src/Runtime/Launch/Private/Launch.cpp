@@ -47,7 +47,30 @@ bool FMainLoop::PreInit(int argc, char** argv)
 
 void FMainLoop::LoadPreInitModules()
 {
-    FModuleManager::Get().LoadModule("Core");
+    LOG("FMainLoop: Loading PreInit Modules");
+    
+    // Load engine modules first
+    FModuleManager::Get().LoadModule("CoreEngine");
+    FModuleManager::Get().LoadModule("RHI");
+    
+    // Load game modules
+    FModuleManager::Get().LoadModule("DefaultGame");
+    FModuleManager::Get().LoadModule("GameplayModule");
+    
+    // Example: Discover and list available plugins
+    // In a real project, you would specify your plugins directory
+    // FModuleManager::Get().DiscoverPlugins(Path::ProjectDir() + "/Plugins");
+    
+    // List all loaded modules by type
+    LOG("FMainLoop: Loaded Engine Modules:");
+    for (const auto& modName : FModuleManager::Get().GetModulesByType(EModuleType::Engine)) {
+        LOG("  - " << modName);
+    }
+    
+    LOG("FMainLoop: Loaded Game Modules:");
+    for (const auto& modName : FModuleManager::Get().GetModulesByType(EModuleType::Game)) {
+        LOG("  - " << modName);
+    }
 }
 
 bool FMainLoop::Init()
@@ -158,6 +181,8 @@ void FMainLoop::Tick()
 
 void FMainLoop::Exit()
 {
+    LOG("FMainLoop: Exiting");
+    
     // reverse-order cleanup
     if (editor) {
         editor->shutdown();
@@ -168,4 +193,9 @@ void FMainLoop::Exit()
         renderer.reset();
     }
     defaultMaterial.reset();
+    
+    // Shutdown all modules in proper order
+    FModuleManager::Get().ShutdownAll();
+    
+    LOG("FMainLoop: Exit complete");
 }
