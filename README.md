@@ -24,19 +24,21 @@ CarrotToy/
 │   ├── Renderer.cpp   # Rendering engine (rasterization)
 │   ├── MaterialEditor.cpp  # ImGui-based editor interface
 │   ├── RayTracer.cpp  # Offline ray tracing implementation
-│   └── Platform/      # Platform abstraction layer
-│       └── Platform.cpp  # Cross-platform window/input management
+│   ├── Platform/      # Platform abstraction layer
+│   │   └── Platform.cpp  # Cross-platform window/input management
+│   └── RHI/           # Render Hardware Interface
+│       ├── RHI.h              # RHI main interface
+│       ├── RHITypes.h         # RHI type definitions
+│       ├── RHIResources.h     # RHI resource abstractions
+│       ├── OpenGLRHI.h/cpp    # OpenGL backend (fully implemented)
+│       ├── VulkanRHI.h/cpp    # Vulkan backend (stub)
+│       └── D3D12RHI.h/cpp     # DirectX 12 backend (stub)
 ├── include/           # Header files
 │   ├── Material.h
 │   ├── Renderer.h
 │   ├── MaterialEditor.h
 │   ├── RayTracer.h
-│   ├── Platform.h         # Platform abstraction interface
-│   ├── PlatformTypes.h    # Platform type definitions
-│   ├── RHI.h              # RHI main interface
-│   ├── RHITypes.h         # RHI type definitions
-│   ├── RHIResources.h     # RHI resource abstractions
-│   └── OpenGLRHI.h        # OpenGL RHI implementation
+│   └── Platform.h         # Platform abstraction interface
 ├── shaders/           # GLSL shader files
 │   ├── default.vert   # Default vertex shader
 │   ├── default.frag   # PBR fragment shader
@@ -44,6 +46,21 @@ CarrotToy/
 │   └── unlit.frag     # Unlit fragment shader
 └── xmake.lua          # Xmake build configuration
 ```
+
+### RHI (Render Hardware Interface)
+
+CarrotToy features a comprehensive RHI abstraction layer that enables multi-API support:
+
+- **OpenGL Backend**: Fully implemented and production-ready (OpenGL 3.3+)
+- **Vulkan Backend**: Complete interface with stub implementation (requires Vulkan SDK)
+- **DirectX 12 Backend**: Complete interface with stub implementation (requires D3D12 SDK)
+
+The RHI abstracts away graphics API differences, making it easy to:
+- Switch between graphics APIs at runtime
+- Support multiple platforms without code duplication
+- Test rendering code across different backends
+
+For detailed documentation, see [docs/RHI_GUIDE.md](docs/RHI_GUIDE.md).
 
 ## Requirements
 
@@ -221,6 +238,9 @@ Extend the `Renderer` class to add:
 ✅ Material preview with 3D sphere  
 ✅ Xmake and CMake build support  
 ✅ **RHI (Render Hardware Interface) abstraction layer**  
+✅ **Complete OpenGL backend via RHI**  
+✅ **Vulkan backend interface (stub implementation)**  
+✅ **DirectX 12 backend interface (stub implementation)**  
 
 ### Planned Features
 🔄 Texture support for materials  
@@ -229,7 +249,9 @@ Extend the `Renderer` class to add:
 🔄 Node-based shader editor  
 🔄 Real-time ray tracing (GPU)  
 🔄 Post-processing effects  
-🔄 Vulkan/DirectX/Metal backend support (via RHI)  
+🔄 **Full Vulkan backend implementation (requires Vulkan SDK)**  
+🔄 **Full DirectX 12 backend implementation (requires D3D12 SDK)**  
+🔄 **Metal backend support (macOS/iOS)**  
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed roadmap.
 
