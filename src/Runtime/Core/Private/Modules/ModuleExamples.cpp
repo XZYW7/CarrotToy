@@ -115,11 +115,10 @@ void ExampleModuleUsage()
     LOG("\n[Example 3] Using a module:");
     // Note: MyCustomModule is not registered by default, so this will be nullptr
     // 注意：MyCustomModule 默认未注册，因此这将为 nullptr
-    auto* customModule = static_cast<FMyCustomModule*>(
-        FModuleManager::Get().GetModule("MyCustomModule")
-    );
-    if (customModule)
+    IModuleInterface* moduleInterface = FModuleManager::Get().GetModule("MyCustomModule");
+    if (moduleInterface)
     {
+        auto* customModule = static_cast<FMyCustomModule*>(moduleInterface);
         customModule->DoSomething();
     }
     else
