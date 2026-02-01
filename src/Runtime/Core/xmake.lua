@@ -14,6 +14,10 @@ target("Core")
     add_packages("glad","glfw","stb","imgui", "glm", {public = true})
 
     add_files("Private/**.cpp")
+    -- Exclude RHI files as they are now in a separate module
+    remove_files("Private/RHI/**.cpp")
     add_headerfiles("Public/**.h")
+    -- Exclude RHI headers as they are now in a separate module
+    remove_headerfiles("Public/RHI/**.h")
     add_includedirs("Public", {public = true})
 target_end()

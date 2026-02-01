@@ -4,6 +4,7 @@
 
 ## Features
 
+- **Modular Architecture**: Separate modules for Core, RHI, Launch, and Editor
 - **Material System**: Create and manage materials with customizable shader parameters
 - **Runtime Shader Editing**: Edit and recompile shaders in real-time without restarting the application
 - **Real-time Rasterization**: OpenGL-based forward rendering with PBR (Physically Based Rendering) shaders
@@ -11,39 +12,41 @@
 - **Material Editor UI**: ImGui-based interface for intuitive material editing
 - **Hot Reload**: Automatic shader reloading when files are modified
 - **PBR Materials**: Built-in physically-based rendering shader support
-- **RHI (Render Hardware Interface)**: Graphics API abstraction layer for multi-API support
+- **RHI (Render Hardware Interface)**: Graphics API abstraction layer as a separate module
 - **Platform Abstraction**: Cross-platform window and input management supporting Windows, Linux, and macOS
+- **Multiple Applications**: DefaultGame, TestRHIApp, and CustomModule as independent executables
 
 ## Architecture
 
+The project is organized into modular components:
+
 ```
 CarrotToy/
-├── src/               # Source files
-│   ├── main.cpp       # Application entry point
-│   ├── Material.cpp   # Material and shader system
-│   ├── Renderer.cpp   # Rendering engine (rasterization)
-│   ├── MaterialEditor.cpp  # ImGui-based editor interface
-│   ├── RayTracer.cpp  # Offline ray tracing implementation
-│   └── Platform/      # Platform abstraction layer
-│       └── Platform.cpp  # Cross-platform window/input management
-├── include/           # Header files
-│   ├── Material.h
-│   ├── Renderer.h
-│   ├── MaterialEditor.h
-│   ├── RayTracer.h
-│   ├── Platform.h         # Platform abstraction interface
-│   ├── PlatformTypes.h    # Platform type definitions
-│   ├── RHI.h              # RHI main interface
-│   ├── RHITypes.h         # RHI type definitions
-│   ├── RHIResources.h     # RHI resource abstractions
-│   └── OpenGLRHI.h        # OpenGL RHI implementation
-├── shaders/           # GLSL shader files
-│   ├── default.vert   # Default vertex shader
-│   ├── default.frag   # PBR fragment shader
-│   ├── unlit.vert     # Unlit vertex shader
-│   └── unlit.frag     # Unlit fragment shader
-└── xmake.lua          # Xmake build configuration
+├── src/
+│   ├── Runtime/           # Runtime engine modules
+│   │   ├── Core/          # Core engine functionality
+│   │   ├── RHI/           # Render Hardware Interface (separate module)
+│   │   └── Launch/        # Application launcher
+│   ├── Tools/
+│   │   └── Editor/        # Material editor UI
+│   ├── DefaultGame/       # Default game application (binary)
+│   ├── TestRHIApp/        # RHI testing application (binary)
+│   └── CustomModule/      # Custom module example (binary)
+├── shaders/               # GLSL/HLSL shader files
+└── xmake.lua             # Build configuration
 ```
+
+### Module Structure
+
+- **Core**: Core engine systems (materials, shaders, rendering, platform abstraction)
+- **RHI**: Graphics API abstraction layer as a separate module
+- **Launch**: Application entry point and initialization
+- **Editor**: ImGui-based material editor
+- **DefaultGame**: Main application executable
+- **TestRHIApp**: RHI testing application
+- **CustomModule**: Example of a custom application module
+
+Each module is built as a separate output target (static/shared library or binary), allowing for modular development and testing.
 
 ## Requirements
 
@@ -65,11 +68,26 @@ Follow the [Xmake installation guide](https://xmake.io/#/guide/installation).
 ### Build the project
 
 ```bash
-# Configure and build
+# Configure and build all targets
 xmake
 
-# Run the application
-xmake run CarrotToy
+# Run the default game application
+xmake run DefaultGame
+
+# Run the RHI test application
+xmake run TestRHIApp
+
+# Run the custom module example
+xmake run CustomModule
+
+# Build specific targets
+xmake build Core          # Core module
+xmake build RHI           # RHI module
+xmake build Launch        # Launch module
+xmake build Editor        # Editor module
+xmake build DefaultGame   # Default game application
+xmake build TestRHIApp    # RHI test application
+xmake build CustomModule  # Custom module application
 ```
 
 ### Build options
