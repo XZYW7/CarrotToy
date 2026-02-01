@@ -102,4 +102,5 @@ rule_end()
 includes("src/Runtime/Launch")
 includes("src/Runtime/Core")
 includes("src/DefaultGame")
+includes("src/TestRHIApp")
 

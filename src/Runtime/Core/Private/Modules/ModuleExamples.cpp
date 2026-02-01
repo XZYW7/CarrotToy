@@ -6,7 +6,6 @@
  */
 
 #include "Modules/Module.h"
-#include "Modules/TestApplicationModule.h"
 #include "Modules/EngineModules.h"
 #include "CoreUtils.h"
 
@@ -123,27 +122,19 @@ void ExampleModuleUsage()
 
     // 5. Using the Test Application Module for RHI testing
     // 5. 使用测试应用模块进行RHI测试
-    LOG("\n[Example 5] Using Test Application Module:");
+    LOG("\n[Example 5] Test Application Module (TestRHIApp):");
+    LOG("TestRHIApp is now a separate application, not part of Core module.");
+    LOG("To use it, build and run the TestRHIApp executable:");
+    LOG("  xmake build TestRHIApp");
+    LOG("  xmake run TestRHIApp");
+    LOG("");
+    LOG("TestRHIApp is structured like DefaultGame - as an independent application.");
+    LOG("It demonstrates proper separation of application code from engine/core modules.");
     
-    // Load the test application module
-    FModuleManager::Get().LoadModule("TestApplication");
-    
-    // Get the module instance
-    auto* testApp = static_cast<FTestApplicationModule*>(
-        FModuleManager::Get().GetModule("TestApplication")
-    );
-    
-    if (testApp)
-    {
-        // Initialize RHI test environment
-        testApp->InitializeRHITest();
-        
-        // Run RHI tests
-        testApp->RunRHITests();
-        
-        // Note: Cleanup will be handled automatically during shutdown
-        // 注意：清理将在关闭时自动处理
-    }
+    // Note: TestApplicationModule is no longer accessible from Core module
+    // It's now a standalone application with its own executable
+    // 注意：TestApplicationModule 现在不再能从 Core 模块访问
+    // 它现在是一个独立的应用程序，有自己的可执行文件
 
     // 6. Plugin discovery and loading
     // 6. 插件发现和加载

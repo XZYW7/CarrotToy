@@ -109,24 +109,28 @@ src/
 │   │   │       ├── ModuleInterface.h               # Base module interface
 │   │   │       ├── Module.h                        # Module manager
 │   │   │       ├── ModuleDescriptor.h              # Module metadata
-│   │   │       ├── EngineModules.h                 # Engine module examples
-│   │   │       └── TestApplicationModule.h         # Test app module
+│   │   │       └── EngineModules.h                 # Engine module examples
 │   │   └── Private/
 │   │       ├── CoreModule.cpp                      # Core module registration
 │   │       └── Modules/
 │   │           ├── Module.cpp                      # Module manager impl
 │   │           ├── EngineModules.cpp               # Engine modules impl
-│   │           ├── TestApplicationModule.cpp       # Test app impl
-│   │           ├── TestApplicationModule_Register.cpp
 │   │           └── ModuleExamples.cpp              # Usage examples
 │   └── Launch/
 │       └── Private/
 │           └── Launch.cpp                          # Updated with module loading
-└── DefaultGame/
-    └── Private/
-        ├── GameModules.h                           # Game module definitions
-        ├── GameModules.cpp                         # Game module impl
-        └── DefualtGame.cpp                         # Game entry point
+├── DefaultGame/                                    # Example game application
+│   ├── Private/
+│   │   ├── GameModules.h                           # Game module definitions
+│   │   ├── GameModules.cpp                         # Game module impl
+│   │   └── DefualtGame.cpp                         # Game entry point
+│   └── xmake.lua                                   # DefaultGame build config
+└── TestRHIApp/                                     # RHI test application
+    ├── Private/
+    │   ├── TestApplicationModule.h                 # Test app module header
+    │   ├── TestApplicationModule.cpp               # Test app module impl
+    │   └── TestRHIApp.cpp                          # Test app entry point
+    └── xmake.lua                                   # TestRHIApp build config
 
 docs/
 ├── MODULE_SYSTEM.md                                # English documentation
@@ -186,20 +190,17 @@ FModuleManager::Get().UnloadPlugin("MyPlugin");
 
 ### 4. RHI测试应用 / RHI Test Application
 
-```cpp
-// Load test application
-FModuleManager::Get().LoadModule("TestApplication");
+TestRHIApp is now a standalone application, separate from the Core module.
 
-// Get module
-auto* testApp = static_cast<FTestApplicationModule*>(
-    FModuleManager::Get().GetModule("TestApplication")
-);
+```bash
+# Build the RHI test application
+xmake build TestRHIApp
 
-// Run tests
-testApp->InitializeRHITest();
-testApp->RunRHITests();
-testApp->ShutdownRHITest();
+# Run the RHI test application
+xmake run TestRHIApp
 ```
+
+The TestRHIApp automatically runs RHI tests on startup through its module's StartupModule() method.
 
 ## 关键改进 / Key Improvements
 
