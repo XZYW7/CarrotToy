@@ -19,15 +19,13 @@ void FCoreEngineModule::ShutdownModule()
 // RHI Module Implementation
 void FRHIModule::StartupModule()
 {
-	LOG("RHIModule: Startup");
-	LOG("RHIModule: Initializing RHI subsystem");
+	LOG("RHIModule: Startup - Initializing RHI subsystem");
 	// RHI initialization happens when devices are created via createRHIDevice()
 	// This module just manages the lifecycle
 }
 
 void FRHIModule::ShutdownModule()
 {
-	LOG("RHIModule: Shutdown");
-	LOG("RHIModule: Shutting down RHI subsystem");
+	LOG("RHIModule: Shutdown - Shutting down RHI subsystem");
 	// Cleanup any global RHI state if needed
 }
