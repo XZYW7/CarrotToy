@@ -3,15 +3,15 @@ local kind = get_config("module_kind") or "static"
 set_basename("TestRHIApp")
 
 target("TestRHIApp")
-    set_kind("binary") -- 它是最终的可执行文件
+    set_kind("binary")
     
     add_files("Private/**.cpp")
     add_deps("Core", "Launch")
 
-    -- 1. 应用依赖包
+    -- 应用依赖包
     add_packages("directxshadercompiler")
 
-    -- 2. 应用系统库 (从根目录移过来的)
+    -- 应用系统库
     if is_plat("windows") then
         add_syslinks("opengl32", "gdi32", "user32", "shell32")
         -- 强制链接 Launch 的 main
@@ -22,7 +22,7 @@ target("TestRHIApp")
         add_frameworks("OpenGL", "Cocoa", "IOKit", "CoreVideo")
     end
 
-    -- 3. 应用自定义构建规则 (编译 Shader)
+    -- 应用自定义构建规则 (编译 Shader)
     add_rules("utils.compile_shaders")
 
     set_targetdir("$(builddir)/bin")
