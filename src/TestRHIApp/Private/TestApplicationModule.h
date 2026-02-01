@@ -25,10 +25,11 @@ public:
 
 	/**
 	 * Returns whether this is a game module
+	 * Application modules are not game modules
 	 */
 	virtual bool IsGameModule() const override
 	{
-		return true; // Application modules are typically considered game modules
+		return false;
 	}
 
 	/**
