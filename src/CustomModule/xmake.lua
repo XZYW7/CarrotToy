@@ -1,9 +1,9 @@
 local kind = get_config("module_kind") or "static"
 
-set_basename("TestRHIApp")
+set_basename("CustomModule")
 
-target("TestRHIApp")
-    set_kind("binary")
+target("CustomModule")
+    set_kind("binary") -- 它是最终的可执行文件
     
     add_files("Private/**.cpp")
     add_deps("Core", "RHI", "Launch")
@@ -26,5 +26,5 @@ target("TestRHIApp")
     add_rules("utils.compile_shaders")
 
     set_targetdir("$(builddir)/bin")
-    set_objectdir("$(builddir)/obj/TestRHIApp")
+    set_objectdir("$(builddir)/obj/CustomModule")
 target_end()
