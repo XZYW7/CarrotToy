@@ -9,6 +9,17 @@
 #pragma region FuncDefs
 
 #define LOG(X) std::cout << X << std::endl
+
+/** 
+ * TEXT Macro - String literal helper
+ * 
+ * In Unreal Engine, TEXT() converts string literals to wide strings (TCHAR*) for Unicode support.
+ * In CarrotToy, since TCHAR is defined as char (narrow string), TEXT() is a pass-through macro
+ * that returns the string unchanged. This maintains API compatibility with UE-style code while
+ * using standard C++ narrow strings.
+ * 
+ * Usage: TEXT("Hello World") expands to "Hello World"
+ */
 #define TEXT(X) X
 
 #pragma endregion // FuncDefs

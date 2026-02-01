@@ -63,12 +63,14 @@ void FMainLoop::LoadPreInitModules()
     
     // List all loaded modules by type
     LOG("FMainLoop: Loaded Engine Modules:");
-    for (const auto& modName : FModuleManager::Get().GetModulesByType(EModuleType::Engine)) {
+    const auto& engineMods = FModuleManager::Get().GetModulesByType(EModuleType::Engine);
+    for (const auto& modName : engineMods) {
         LOG("  - " << modName);
     }
     
     LOG("FMainLoop: Loaded Game Modules:");
-    for (const auto& modName : FModuleManager::Get().GetModulesByType(EModuleType::Game)) {
+    const auto& gameMods = FModuleManager::Get().GetModulesByType(EModuleType::Game);
+    for (const auto& modName : gameMods) {
         LOG("  - " << modName);
     }
 }

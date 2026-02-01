@@ -107,18 +107,18 @@ void ExampleModuleUsage()
     // 4. Query modules by type
     // 4. 按类型查询模块
     LOG("\n[Example 4] Querying modules by type:");
-    auto engineModules = FModuleManager::Get().GetModulesByType(EModuleType::Engine);
+    const auto& engineModules = FModuleManager::Get().GetModulesByType(EModuleType::Engine);
     LOG("Engine modules:");
-    for (size_t i = 0; i < engineModules.Num(); ++i)
+    for (const auto& modName : engineModules)
     {
-        LOG("  - " << engineModules[i]);
+        LOG("  - " << modName);
     }
 
-    auto gameModules = FModuleManager::Get().GetModulesByType(EModuleType::Game);
+    const auto& gameModules = FModuleManager::Get().GetModulesByType(EModuleType::Game);
     LOG("Game modules:");
-    for (size_t i = 0; i < gameModules.Num(); ++i)
+    for (const auto& modName : gameModules)
     {
-        LOG("  - " << gameModules[i]);
+        LOG("  - " << modName);
     }
 
     // 5. Using the Test Application Module for RHI testing

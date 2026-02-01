@@ -111,23 +111,19 @@ void FModuleManager::ShutdownAll()
         }
     }
     
-    // Shutdown in reverse order: App -> Game -> Plugin -> Engine
-    for (const auto& name : appModules) {
-        modules[name].ModuleInstance->ShutdownModule();
-        modules[name].bIsLoaded = false;
-    }
-    for (const auto& name : gameModules) {
-        modules[name].ModuleInstance->ShutdownModule();
-        modules[name].bIsLoaded = false;
-    }
-    for (const auto& name : pluginModules) {
-        modules[name].ModuleInstance->ShutdownModule();
-        modules[name].bIsLoaded = false;
-    }
-    for (const auto& name : engineModules) {
-        modules[name].ModuleInstance->ShutdownModule();
-        modules[name].bIsLoaded = false;
-    }
+    // Helper lambda to shutdown a list of modules
+    auto shutdownModules = [this](const TArray<FName>& moduleNames) {
+        for (const auto& name : moduleNames) {
+            modules[name].ModuleInstance->ShutdownModule();
+            modules[name].bIsLoaded = false;
+        }
+    };
+    
+    // Shutdown in reverse order: App → Game → Plugin → Engine
+    shutdownModules(appModules);
+    shutdownModules(gameModules);
+    shutdownModules(pluginModules);
+    shutdownModules(engineModules);
     
     modules.clear();
 }
@@ -141,7 +137,7 @@ void FModuleManager::DiscoverPlugins(const FString& pluginDirectory)
     // In the future, you could parse JSON plugin descriptors here
     
     if (!std::filesystem::exists(pluginDirectory)) {
-        LOG("ModuleManager: Plugin directory does not exist: " << pluginDirectory);
+        LOG("ModuleManager: Plugin directory does not exist. Please create the directory or verify the path: " << pluginDirectory);
         return;
     }
     
@@ -149,12 +145,12 @@ void FModuleManager::DiscoverPlugins(const FString& pluginDirectory)
     try {
         for (const auto& entry : std::filesystem::directory_iterator(pluginDirectory)) {
             if (entry.is_directory()) {
-                FName pluginName = entry.path().filename().string();
-                if (availablePlugins.find(pluginName) == availablePlugins.end()) {
-                    FPluginDescriptor desc(pluginName);
-                    desc.FriendlyName = pluginName;
-                    availablePlugins[pluginName] = desc;
-                    LOG("ModuleManager: Discovered plugin " << pluginName);
+                FName potentialPluginName = entry.path().filename().string();
+                if (availablePlugins.find(potentialPluginName) == availablePlugins.end()) {
+                    FPluginDescriptor desc(potentialPluginName);
+                    desc.FriendlyName = potentialPluginName;
+                    availablePlugins[potentialPluginName] = desc;
+                    LOG("ModuleManager: Discovered plugin " << potentialPluginName);
                 }
             }
         }
