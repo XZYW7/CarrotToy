@@ -10,8 +10,9 @@ class Material;
 class Renderer;
 
 // Material Editor UI class - provides ImGui interface for material editing
-class EDITOR_API MaterialEditor {
+class EDITOR_API MaterialEditor{
 public:
+
     MaterialEditor();
     ~MaterialEditor();
     

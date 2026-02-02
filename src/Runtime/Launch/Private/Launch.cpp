@@ -58,7 +58,7 @@ void FMainLoop::LoadPreInitModules()
     InitializeModuleCoreEngine();
     InitializeModuleRHI();
     InitializeModuleRenderer();
-    
+    InitializeModuleEditor();
     // Load application module first (if registered)
     // Get all registered application modules and load them
     const auto& appModules = FModuleManager::Get().GetModulesByType(EModuleType::Application);
@@ -73,9 +73,8 @@ void FMainLoop::LoadPreInitModules()
     FModuleManager::Get().LoadModule("Launch");
     FModuleManager::Get().LoadModule("RHI");
     FModuleManager::Get().LoadModule("Renderer");
-    
-    // Note: Editor is not a module, it's a tool library linked directly to applications that need it
-    
+    FModuleManager::Get().LoadModule("Editor");
+
     // Example: Discover and list available plugins
     // In a real project, you would specify your plugins directory
     // FModuleManager::Get().DiscoverPlugins(Path::ProjectDir() + "/Plugins");
@@ -127,8 +126,9 @@ bool FMainLoop::Init()
         defaultMaterial->setFloat("roughness", 0.5f);
 
         // Initialize material editor
-        editor = std::make_unique<CarrotToy::MaterialEditor>();
-        if (!editor->initialize(renderer.get())) {
+        auto& editorMod = FModuleManager::Get().GetModuleChecked<FEditorModule>("Editor");
+        editor = editorMod.CreateEditor(renderer.get());
+        if (!editor) {
             std::cerr << "Failed to initialize material editor" << std::endl;
             return false;
         }

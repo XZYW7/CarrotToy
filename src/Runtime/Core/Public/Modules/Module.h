@@ -27,6 +27,17 @@ class FModuleManager {
 public:
     static CORE_API FModuleManager& Get();
     
+    template<typename ModuleType>
+    static ModuleType& GetModuleChecked(const FName& name)
+    {
+        IModuleInterface* module = Get().GetModule(name);
+        if (!module) {
+            // Handle error: module not found
+            throw std::runtime_error("Module not found: " + std::string(name));
+        }
+        return static_cast<ModuleType&>(*module);
+    }
+
     // Register module instance (for static-linked modules or after dynamic factory)
     CORE_API void RegisterModule(const FName& name, FUniquePtr<IModuleInterface> module, 
                        EModuleType type = EModuleType::Engine);

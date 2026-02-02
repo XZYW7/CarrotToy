@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include "CoreUtils.h"
-
+#include <GLFW/glfw3.h>
 namespace CarrotToy {
 namespace RHI {
 
@@ -565,7 +565,6 @@ OpenGLRHIDevice::~OpenGLRHIDevice() {
 bool OpenGLRHIDevice::initialize() {
     // OpenGL context and loader (GLAD) should already be initialized by the Platform layer
     // This is just a validation check to ensure OpenGL is available
-    
     // Verify that we can get OpenGL version (confirms context is active and loaded)
     const GLubyte* version = glGetString(GL_VERSION);
     if (!version) {
@@ -743,6 +742,7 @@ void OpenGLRHIDevice::drawIndexed(PrimitiveTopology topology, uint32_t indexCoun
 
 // Factory function implementation
 std::shared_ptr<IRHIDevice> createRHIDevice(GraphicsAPI api) {
+    
     LOG("Creating RHI Device for API: " << static_cast<int>(api));
     return std::make_shared<OpenGLRHIDevice>();
 }

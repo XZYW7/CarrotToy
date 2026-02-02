@@ -9,12 +9,14 @@ if is_plat("windows") then
 end
 add_rules("mode.debug", "mode.release")
 
-add_requires("glfw", "glm", "stb", "directxshadercompiler")
+add_requires("glfw", "glm", "stb", "directxshadercompiler", 
+    {configs = {
+    }}
+)
 add_requires("glad", {
     configs = {
         version = "4.6", 
         extensions = "GL_ARB_gl_spirv",
-        shared = true
     }
 })
 add_requires("imgui", { 
@@ -22,7 +24,8 @@ add_requires("imgui", {
         glfw = true,  -- 指定后端，可选sdl2、glut等
         opengl3 = true, -- 指定渲染API版本
         freetype = true,   -- 启用FreeType字体支持
-        docking = true     -- 启用 docking 特性
+        docking = true,     -- 启用 docking 特性
+        viewports = true,   -- 启用多视口支持
     }
 })
 
