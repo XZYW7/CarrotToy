@@ -15,4 +15,5 @@ void FEditorModule::ShutdownModule()
 	// Clean up editor systems
 }
 
-// Note: Editor is not registered as a module - it's a tool library linked directly
+
+IMPLEMENT_MODULE(FEditorModule, Editor)
