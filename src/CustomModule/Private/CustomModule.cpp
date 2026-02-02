@@ -8,7 +8,7 @@
  * This module uses IMPLEMENT_APPLICATION_MODULE to register itself
  * and create the global GEngineLoop instance.
  */
-
+#include "Launch.h"
 #include "CustomModule.h"
 #include "Modules/Module.h"
 #include "CoreUtils.h"

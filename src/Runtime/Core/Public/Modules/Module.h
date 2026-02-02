@@ -95,11 +95,6 @@ public:
     static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
     static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Engine );
 
-// Implement a game module
-#define IMPLEMENT_GAME_MODULE( ModuleImplClass, ModuleName ) \
-    /** Global registrant object for this game module when linked statically */ \
-    static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
-    static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Game );
 
 // Implement an application module (with application entry point)
 #define IMPLEMENT_APPLICATION_MODULE( ModuleImplClass, ModuleName, GameName ) \
@@ -109,8 +104,12 @@ public:
     static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
     static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Application ); \
     FMainLoop GEngineLoop;
-    
+
 // Legacy macro for backward compatibility
 #define IMPLEMENT_APPLICATION( ModuleName, GameName ) \
     IMPLEMENT_APPLICATION_MODULE(FDefaultModule, ModuleName, GameName)
  
+// Implement a game module
+#define IMPLEMENT_GAME_MODULE( ModuleName, GameName ) \
+    IMPLEMENT_APPLICATION_MODULE( FDefaultModule, ModuleName, GameName )
+    

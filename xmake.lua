@@ -4,7 +4,9 @@
 set_project("CarrotToy")
 set_version("0.1.0")
 set_languages("c++17")
-
+if is_plat("windows") then
+    add_cxflags("/utf-8")
+end
 add_rules("mode.debug", "mode.release")
 
 add_requires("glfw", "glm", "stb", "directxshadercompiler")

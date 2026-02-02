@@ -24,7 +24,9 @@
  * If migrating from UE code that expects wide strings, you may need to adapt string handling.
  * For CarrotToy's purposes, narrow strings (UTF-8) are sufficient.
  */
+#if !defined(TEXT) && !defined(_WIN32)
 #define TEXT(X) X
+#endif
 
 #pragma endregion // FuncDefs
 
