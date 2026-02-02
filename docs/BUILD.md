@@ -94,6 +94,32 @@ xmake run CarrotToy
    xmake clean -a
    ```
 
+## Module Compilation Mode
+
+By default, modules are built as **shared libraries (DLLs/SOs)** for faster iteration and smaller binary sizes. You can change this behavior:
+
+```bash
+# Build with shared libraries (default)
+xmake f --module_kind=shared
+xmake
+
+# Build with static libraries
+xmake f --module_kind=static
+xmake
+```
+
+**Shared libraries (default):**
+- Faster incremental builds
+- Smaller final executable size
+- Dynamic linking at runtime
+- Better for development and iteration
+
+**Static libraries:**
+- Single executable with all code embedded
+- No external DLL/SO dependencies
+- Larger executable size
+- Better for distribution
+
 ## Dependency Management
 
 Xmake automatically manages the following dependencies:
