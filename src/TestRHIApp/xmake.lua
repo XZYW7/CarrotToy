@@ -1,4 +1,4 @@
-local kind = get_config("module_kind") or "static"
+local kind = get_config("module_kind") or "shared"
 
 set_basename("TestRHIApp")
 
@@ -15,7 +15,9 @@ target("TestRHIApp")
     if is_plat("windows") then
         add_syslinks("opengl32", "gdi32", "user32", "shell32")
         -- 强制链接 Launch 的 main 和 Core 的模块注册
-        add_ldflags("/WHOLEARCHIVE:Launch.lib", "/WHOLEARCHIVE:Core.lib", "/WHOLEARCHIVE:RHI.lib", {force = true})
+        if kind == "static" then
+            add_ldflags("/WHOLEARCHIVE:Launch.lib", "/WHOLEARCHIVE:Core.lib", "/WHOLEARCHIVE:RHI.lib", {force = true})
+        end
     elseif is_plat("linux") then
         add_syslinks("GL", "pthread", "dl", "X11")
     elseif is_plat("macosx") then

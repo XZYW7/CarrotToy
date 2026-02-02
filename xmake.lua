@@ -21,10 +21,9 @@ add_requires("imgui", {
 })
 
 option("module_kind")
-    set_default("static")
+    set_default("shared")
     set_showmenu(true)
     set_description("Build modules as shared or static (shared/static)")
-    add_defines("CARROT_BUILD_SHARED")
 option_end()
 rule("utils.compile_shaders")
     after_build(function (target)

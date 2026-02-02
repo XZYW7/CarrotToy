@@ -101,9 +101,19 @@ xmake
 xmake f -m release
 xmake
 
+# Build with static libraries (default is shared)
+xmake f --module_kind=static
+xmake
+
+# Build with shared libraries (default)
+xmake f --module_kind=shared
+xmake
+
 # Clean build
 xmake clean
 ```
+
+**Note:** By default, modules are built as **shared libraries** for faster iteration. Use `--module_kind=static` to build static libraries instead.
 
 ### Editor Configure
 

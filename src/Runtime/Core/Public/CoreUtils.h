@@ -88,9 +88,15 @@ private:
 #pragma region MacrosDefs
 #ifndef CORE_API
 #if defined(_WIN32) || defined(_WIN64)
-#define CORE_API __declspec(dllexport)
+    #ifdef CORE_BUILD_SHARED
+        #define CORE_API __declspec(dllexport)
+    #elif defined(CORE_IMPORT_SHARED)
+        #define CORE_API __declspec(dllimport)
+    #else
+        #define CORE_API
+    #endif
 #else
-#define CORE_API
+    #define CORE_API
 #endif
 #endif
 
