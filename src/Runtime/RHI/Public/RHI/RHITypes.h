@@ -2,6 +2,21 @@
 
 #include <cstdint>
 
+// RHI API export/import macro
+#ifndef RHI_API
+#if defined(_WIN32) || defined(_WIN64)
+    #ifdef RHI_BUILD_SHARED
+        #define RHI_API __declspec(dllexport)
+    #elif defined(RHI_IMPORT_SHARED)
+        #define RHI_API __declspec(dllimport)
+    #else
+        #define RHI_API
+    #endif
+#else
+    #define RHI_API
+#endif
+#endif
+
 namespace CarrotToy {
 namespace RHI {
 

@@ -1,4 +1,4 @@
-local kind = get_config("module_kind") or "static"
+local kind = get_config("module_kind") or "shared"
 
 set_basename("DefaultGame")
 
@@ -15,7 +15,9 @@ target("DefaultGame")
     if is_plat("windows") then
         add_syslinks("opengl32", "gdi32", "user32", "shell32")
         -- 强制链接 Launch 的 main（包含全局对象）
-        add_ldflags("/WHOLEARCHIVE:Launch.lib", {force = true})
+        if kind == "static" then
+            add_ldflags("/WHOLEARCHIVE:Launch.lib", {force = true})
+        end
     elseif is_plat("linux") then
         add_syslinks("GL", "pthread", "dl", "X11")
     elseif is_plat("macosx") then

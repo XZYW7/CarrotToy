@@ -1,6 +1,6 @@
 -- RHI module for CarrotToy
 
-local kind = get_config("module_kind") or "static"
+local kind = get_config("module_kind") or "shared"
 if kind == "shared" then
     set_kind("shared")
 else
@@ -19,4 +19,10 @@ target("RHI")
     
     -- RHI depends on Core for basic types and utilities
     add_deps("Core")
+    
+    -- Add defines for shared library build
+    if kind == "shared" then
+        add_defines("RHI_BUILD_SHARED", {public = false})
+        add_defines("RHI_IMPORT_SHARED", {public = true})
+    end
 target_end()
