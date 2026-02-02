@@ -27,5 +27,13 @@ public:
 	virtual bool IsGameModule() const override { return false; }
 };
 
+// Force DLL loading function
+extern "C" void ForceRHIModuleLoad()
+{
+	// This function exists solely to be referenced from applications
+	// to ensure the RHI DLL is loaded, triggering global constructors
+	// that register the module with FModuleManager
+}
+
 // Register RHI Module
 IMPLEMENT_MODULE(FRHIModule, RHI)

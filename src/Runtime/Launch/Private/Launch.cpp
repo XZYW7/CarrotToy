@@ -7,6 +7,9 @@
 #include "MaterialEditor.h"
 #include <iostream>
 #include "Modules/Module.h"
+#include "Modules/EngineModules.h"
+#include "RendererModule.h"
+#include "RHI/RHIModule.h"
 using namespace CarrotToy;
 
 
@@ -49,6 +52,12 @@ bool FMainLoop::PreInit(int argc, char** argv)
 void FMainLoop::LoadPreInitModules()
 {
     LOG("FMainLoop: Loading PreInit Modules");
+    
+    // Force dynamic module DLLs to load by referencing symbols from them
+    // This ensures their global constructors run and modules get registered
+    ForceCoreModuleLoad();
+    ForceRHIModuleLoad();
+    ForceRendererModuleLoad();
     
     // Load application module first (if registered)
     // Get all registered application modules and load them

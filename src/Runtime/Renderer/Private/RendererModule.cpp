@@ -16,5 +16,13 @@ void FRendererModule::ShutdownModule()
 	// Cleanup renderer resources
 }
 
+// Force DLL loading function
+extern "C" void ForceRendererModuleLoad()
+{
+	// This function exists solely to be referenced from applications
+	// to ensure the Renderer DLL is loaded, triggering global constructors
+	// that register the module with FModuleManager
+}
+
 // Register Renderer Module
 IMPLEMENT_MODULE(FRendererModule, Renderer)
