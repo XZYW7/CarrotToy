@@ -10,6 +10,24 @@
 
 #define LOG(X) std::cout << X << std::endl
 
+/** 
+ * TEXT Macro - String literal helper
+ * 
+ * In Unreal Engine, TEXT() converts string literals to wide strings (TCHAR*) for Unicode support.
+ * In CarrotToy, since TCHAR is defined as char (narrow string), TEXT() is a pass-through macro
+ * that returns the string unchanged. This maintains API compatibility with UE-style code while
+ * using standard C++ narrow strings.
+ * 
+ * Usage: TEXT("Hello World") expands to "Hello World"
+ * 
+ * Note: This differs from UE's TEXT macro which may use L prefix (L"string") on some platforms.
+ * If migrating from UE code that expects wide strings, you may need to adapt string handling.
+ * For CarrotToy's purposes, narrow strings (UTF-8) are sufficient.
+ */
+#if !defined(TEXT) && !defined(_WIN32)
+#define TEXT(X) X
+#endif
+
 #pragma endregion // FuncDefs
 
 #pragma region TypeDefs
@@ -53,6 +71,12 @@ public:
     const T& operator[](size_t index) const {
         return data[index];
     }
+
+    // Iterator support for range-based for loops
+    typename FVector<T>::iterator begin() { return data.begin(); }
+    typename FVector<T>::iterator end() { return data.end(); }
+    typename FVector<T>::const_iterator begin() const { return data.begin(); }
+    typename FVector<T>::const_iterator end() const { return data.end(); }
 
 private:
     FVector<T> data;

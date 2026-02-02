@@ -3,6 +3,7 @@
 #include "Renderer.h"
 
 #include "Material.h"
+#include "EditorModule.h"
 #include "MaterialEditor.h"
 #include <iostream>
 #include "Modules/Module.h"
@@ -47,7 +48,43 @@ bool FMainLoop::PreInit(int argc, char** argv)
 
 void FMainLoop::LoadPreInitModules()
 {
-    FModuleManager::Get().LoadModule("Core");
+    LOG("FMainLoop: Loading PreInit Modules");
+    
+    // Load application module first (if registered)
+    // Get all registered application modules and load them
+    const auto& appModules = FModuleManager::Get().GetModulesByType(EModuleType::Application);
+    for (const auto& modName : appModules) {
+        LOG("FMainLoop: Loading Application Module: " << modName);
+        FModuleManager::Get().LoadModule(modName);
+    }
+    
+    // Try to load engine modules (optional - not all apps have these)
+    FModuleManager::Get().LoadModule("CoreEngine");
+    FModuleManager::Get().LoadModule("RHI");
+    // Note: Editor is not a module, it's a tool library linked directly to applications that need it
+    
+    // Example: Discover and list available plugins
+    // In a real project, you would specify your plugins directory
+    // FModuleManager::Get().DiscoverPlugins(Path::ProjectDir() + "/Plugins");
+    
+    // List all loaded modules by type
+    LOG("FMainLoop: Loaded Application Modules:");
+    const auto& loadedAppMods = FModuleManager::Get().GetModulesByType(EModuleType::Application);
+    for (const auto& modName : loadedAppMods) {
+        LOG("  - " << modName);
+    }
+    
+    LOG("FMainLoop: Loaded Engine Modules:");
+    const auto& engineMods = FModuleManager::Get().GetModulesByType(EModuleType::Engine);
+    for (const auto& modName : engineMods) {
+        LOG("  - " << modName);
+    }
+    
+    LOG("FMainLoop: Loaded Game Modules:");
+    const auto& gameMods = FModuleManager::Get().GetModulesByType(EModuleType::Game);
+    for (const auto& modName : gameMods) {
+        LOG("  - " << modName);
+    }
 }
 
 bool FMainLoop::Init()
@@ -158,6 +195,8 @@ void FMainLoop::Tick()
 
 void FMainLoop::Exit()
 {
+    LOG("FMainLoop: Exiting");
+    
     // reverse-order cleanup
     if (editor) {
         editor->shutdown();
@@ -168,4 +207,9 @@ void FMainLoop::Exit()
         renderer.reset();
     }
     defaultMaterial.reset();
+    
+    // Shutdown all modules in proper order
+    FModuleManager::Get().ShutdownAll();
+    
+    LOG("FMainLoop: Exit complete");
 }

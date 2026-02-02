@@ -4,7 +4,9 @@
 set_project("CarrotToy")
 set_version("0.1.0")
 set_languages("c++17")
-
+if is_plat("windows") then
+    add_cxflags("/utf-8")
+end
 add_rules("mode.debug", "mode.release")
 
 add_requires("glfw", "glm", "stb", "directxshadercompiler")
@@ -99,7 +101,11 @@ rule("utils.compile_shaders")
     end)
 rule_end()
 
-includes("src/Runtime/Launch")
 includes("src/Runtime/Core")
+includes("src/Runtime/RHI")
+includes("src/Runtime/Renderer")
+includes("src/Runtime/Launch")
+includes("src/Tools/Editor")
 includes("src/DefaultGame")
-
+includes("src/TestRHIApp")
+includes("src/CustomModule")

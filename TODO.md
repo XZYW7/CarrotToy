@@ -1,5 +1,5 @@
 # Module
-- [ ] 拆分Module - Editor
+- [x] 拆分Module - Editor (Completed: MaterialEditor moved to Editor module, GameModule concept removed)
 
 
 # RHI

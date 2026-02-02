@@ -1,4 +1,4 @@
--- Core module for CarrotToy
+-- Editor module for CarrotToy
 
 local kind = get_config("module_kind") or "static"
 if kind == "shared" then
@@ -7,13 +7,14 @@ else
     set_kind("static")
 end
 
+set_basename("Editor")
 
-set_basename("Core")
-target("Core")
-    -- collect core sources; keep public headers in Public/ for consumers
+target("Editor")
+    -- collect editor sources; keep public headers in Public/ for consumers
     add_packages("glad","glfw","stb","imgui", "glm", {public = true})
+
     add_files("Private/**.cpp")
     add_headerfiles("Public/**.h")
     add_includedirs("Public", {public = true})
-    
+    add_deps("Core", "Renderer")
 target_end()
