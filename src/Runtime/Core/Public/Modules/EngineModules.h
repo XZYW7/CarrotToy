@@ -16,18 +16,3 @@ public:
 	
 	virtual bool IsGameModule() const override { return false; }
 };
-
-/**
- * RHI (Rendering Hardware Interface) Module
- * Handles graphics API abstraction and device management
- */
-class FRHIModule : public IModuleInterface
-{
-public:
-	virtual ~FRHIModule() override = default;
-
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
-	
-	virtual bool IsGameModule() const override { return false; }
-};
