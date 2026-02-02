@@ -16,5 +16,5 @@ void FLaunchModule::ShutdownModule()
 	// Cleanup launch resources
 }
 
-// Register Launch Module
-IMPLEMENT_MODULE(FLaunchModule, Launch)
+// Register Launch Module using static registration (since Launch is statically linked)
+IMPLEMENT_MODULE_STATIC(FLaunchModule, Launch)

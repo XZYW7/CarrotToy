@@ -1,6 +1,7 @@
 #include "Modules/Module.h"
 #include "Modules/ModuleInterface.h"
 #include "CoreUtils.h"
+#include "RHI/RHITypes.h"
 
 /**
  * RHI (Rendering Hardware Interface) Module
@@ -27,13 +28,5 @@ public:
 	virtual bool IsGameModule() const override { return false; }
 };
 
-// Force DLL loading function
-extern "C" void ForceRHIModuleLoad()
-{
-	// This function exists solely to be referenced from applications
-	// to ensure the RHI DLL is loaded, triggering global constructors
-	// that register the module with FModuleManager
-}
-
-// Register RHI Module
-IMPLEMENT_MODULE(FRHIModule, RHI)
+// Register RHI Module using RHI_API export macro
+IMPLEMENT_MODULE_WITH_API(FRHIModule, RHI, RHI_API)

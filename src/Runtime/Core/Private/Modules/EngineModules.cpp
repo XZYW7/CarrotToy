@@ -15,11 +15,3 @@ void FCoreEngineModule::ShutdownModule()
 	LOG("CoreEngineModule: Shutting down core engine systems");
 	// Clean up core systems
 }
-
-// Force DLL loading function
-extern "C" void ForceCoreModuleLoad()
-{
-	// This function exists solely to be referenced from applications
-	// to ensure the Core DLL is loaded, triggering global constructors
-	// that register the module with FModuleManager
-}

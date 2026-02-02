@@ -1,5 +1,6 @@
 #pragma once
 #include "Modules/ModuleInterface.h"
+#include "RendererAPI.h"
 
 /**
  * Renderer Module
@@ -18,7 +19,7 @@ public:
 };
 
 /**
- * Force Renderer module DLL to be loaded by referencing this function.
- * This ensures the module's global constructors run and IMPLEMENT_MODULE registers it.
+ * Initialize the Renderer module and register it with ModuleManager.
+ * Must be called explicitly to ensure proper DLL loading and module registration.
  */
-extern "C" void ForceRendererModuleLoad();
+extern "C" RENDERER_API void InitializeModuleRenderer();

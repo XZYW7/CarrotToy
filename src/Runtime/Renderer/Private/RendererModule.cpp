@@ -1,6 +1,7 @@
 #include "RendererModule.h"
 #include "Modules/Module.h"
 #include "CoreUtils.h"
+#include "RendererAPI.h"
 
 // Renderer Module Implementation
 void FRendererModule::StartupModule()
@@ -16,13 +17,5 @@ void FRendererModule::ShutdownModule()
 	// Cleanup renderer resources
 }
 
-// Force DLL loading function
-extern "C" void ForceRendererModuleLoad()
-{
-	// This function exists solely to be referenced from applications
-	// to ensure the Renderer DLL is loaded, triggering global constructors
-	// that register the module with FModuleManager
-}
-
-// Register Renderer Module
-IMPLEMENT_MODULE(FRendererModule, Renderer)
+// Register Renderer Module using RENDERER_API export macro
+IMPLEMENT_MODULE_WITH_API(FRendererModule, Renderer, RENDERER_API)

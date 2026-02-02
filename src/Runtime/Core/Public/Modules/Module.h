@@ -89,20 +89,48 @@ public:
     }
 };
 
-// Implement a module (default to Engine type)
+// Implement a module with explicit API export macro (for dynamic/shared modules)
+// API_MACRO should be the module's export macro (e.g., CORE_API, RHI_API, RENDERER_API)
+// Creates an exported InitializeModule function that must be called explicitly
+#define IMPLEMENT_MODULE_WITH_API( ModuleImplClass, ModuleName, API_MACRO ) \
+    namespace { \
+        static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
+    } \
+    extern "C" API_MACRO void InitializeModule##ModuleName() \
+    { \
+        static bool bInitialized = false; \
+        if (!bInitialized) { \
+            FModuleManager::Get().RegisterModule(TEXT(#ModuleName), \
+                FUniquePtr<IModuleInterface>(CreateModule##ModuleName()), \
+                EModuleType::Engine); \
+            bInitialized = true; \
+        } \
+    }
+
+// Implement a module (uses CORE_API by default for backward compatibility)
+// For dynamic/shared modules, this creates an exported init function
 #define IMPLEMENT_MODULE( ModuleImplClass, ModuleName ) \
-    /** Global registrant object for this module when linked statically */ \
-    static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
-    static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Engine );
+    IMPLEMENT_MODULE_WITH_API( ModuleImplClass, ModuleName, CORE_API )
+
+// Implement a module with static registration (for statically linked modules)
+// Uses global constructor for automatic registration before main()
+#define IMPLEMENT_MODULE_STATIC( ModuleImplClass, ModuleName ) \
+    namespace { \
+        static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
+        static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Engine ); \
+    }
 
 
 // Implement an application module (with application entry point)
+// Application modules are in the executable, so they use static registration
 #define IMPLEMENT_APPLICATION_MODULE( ModuleImplClass, ModuleName, GameName ) \
     /** For monolithic builds, we must statically define the game's name string */ \
     TCHAR GInternalProjectName[64] = TEXT( GameName ); \
-    /** Global registrant object for this application module */ \
-    static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
-    static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Application ); \
+    /** Global registrant for application module (uses static registration) */ \
+    namespace { \
+        static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
+        static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Application ); \
+    } \
     FMainLoop GEngineLoop;
 
 // Legacy macro for backward compatibility
