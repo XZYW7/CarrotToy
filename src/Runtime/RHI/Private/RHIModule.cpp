@@ -1,5 +1,6 @@
 #include "Modules/Module.h"
 #include "Modules/ModuleInterface.h"
+#include "CoreUtils.h"
 
 /**
  * RHI (Rendering Hardware Interface) Module

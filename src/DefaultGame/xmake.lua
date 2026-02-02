@@ -17,8 +17,13 @@ target("DefaultGame")
         add_ldflags("/WHOLEARCHIVE:Launch.lib", {force = true})
     elseif is_plat("linux") then
         add_syslinks("GL", "pthread", "dl", "X11")
+        -- For static libraries, use --whole-archive to ensure module registration
+        add_ldflags("-Wl,--whole-archive", {force = true})
+        add_ldflags("-Wl,--no-whole-archive", {force = true})
     elseif is_plat("macosx") then
         add_frameworks("OpenGL", "Cocoa", "IOKit", "CoreVideo")
+        -- For static libraries, use -force_load to ensure module registration
+        -- add_ldflags("-Wl,-force_load", {force = true})
     end
 
     -- 3. 应用自定义构建规则 (编译 Shader)
