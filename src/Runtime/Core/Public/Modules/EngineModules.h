@@ -1,5 +1,5 @@
 #pragma once
-#include "Modules/ModuleInterface.h"
+#include "Modules/Module.h"
 
 /**
  * Core Engine Module

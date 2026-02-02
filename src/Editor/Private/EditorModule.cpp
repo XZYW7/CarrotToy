@@ -1,6 +1,6 @@
 #include "EditorModule.h"
 #include "CoreUtils.h"
-
+#include "EditorAPI.h"
 void FEditorModule::StartupModule()
 {
 	LOG("EditorModule: Startup");
@@ -16,4 +16,4 @@ void FEditorModule::ShutdownModule()
 }
 
 
-IMPLEMENT_MODULE(FEditorModule, Editor)
+IMPLEMENT_MODULE_WITH_API(FEditorModule, Editor, EDITOR_API)

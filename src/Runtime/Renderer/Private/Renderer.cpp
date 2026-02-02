@@ -75,7 +75,7 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     }
     t_gladWindow = nullptr;  // Clear after successful initialization
     
-    // Create and register a global RHI device (OpenGL backend)
+    LOG("Create and register a global RHI device (OpenGL backend)");
     auto rhiDevice = CarrotToy::RHI::createRHIDevice(CarrotToy::RHI::GraphicsAPI::OpenGL);
     if (rhiDevice) {
         if (!rhiDevice->initialize()) {

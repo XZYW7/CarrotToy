@@ -10,7 +10,13 @@ end
 add_rules("mode.debug", "mode.release")
 
 add_requires("glfw", "glm", "stb", "directxshadercompiler")
-add_requires("glad", {configs = {version = "4.6", extensions = "GL_ARB_gl_spirv"}})
+add_requires("glad", {
+    configs = {
+        version = "4.6", 
+        extensions = "GL_ARB_gl_spirv",
+        shared = true
+    }
+})
 add_requires("imgui", { 
     configs = {
         glfw = true,  -- 指定后端，可选sdl2、glut等

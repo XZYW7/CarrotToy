@@ -32,7 +32,7 @@ struct ShaderParameter {
 
 
 // Material class - represents a material with shader and parameters
-class Material {
+class RENDERER_API Material {
 public:
     Material(const std::string& name, std::shared_ptr<Shader> shader);
     ~Material();
@@ -58,7 +58,7 @@ private:
 };
 
 // Material Manager - manages all materials in the scene
-class MaterialManager {
+class RENDERER_API MaterialManager {
 public:
     static MaterialManager& getInstance();
     

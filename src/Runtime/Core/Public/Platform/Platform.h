@@ -4,7 +4,7 @@
 #include <memory>
 #include <functional>
 #include <vector>
-
+#include "CoreUtils.h"
 namespace CarrotToy {
 namespace Platform {
 
@@ -71,7 +71,7 @@ public:
 };
 
 // Factory function to create platform instance
-std::shared_ptr<IPlatform> createPlatform();
+CORE_API std::shared_ptr<IPlatform> createPlatform();
 
 // Get current platform type (compile-time detection)
 PlatformType getCurrentPlatformType();

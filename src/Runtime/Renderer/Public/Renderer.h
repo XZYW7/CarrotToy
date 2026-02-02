@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include "Platform/Platform.h"
+#include "RendererAPI.h"
 
 namespace CarrotToy {
 
@@ -10,7 +11,7 @@ class Shader;
 class Material;
 
 // Renderer class - manages the rendering pipeline
-class Renderer {
+class RENDERER_API Renderer {
 public:
     enum class RenderMode {
         Rasterization,  // Real-time rasterization

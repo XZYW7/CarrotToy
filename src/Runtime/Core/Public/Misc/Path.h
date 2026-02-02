@@ -3,14 +3,14 @@
 
 #include <string>
 #include <vector>
-
+#include "CoreUtils.h"
 namespace CarrotToy {
 
 // Small Path utility used by the engine. Provides basic string/path helpers
 // (endsWith, startsWith, contains), normalization (convert backslashes to
 // forward slashes, remove duplicate slashes), extension/filename helpers,
 // and simple UTF conversions (std::string <-> std::wstring).
-class Path {
+class CORE_API Path {
 public:
 	// String conversions
 	static std::wstring toWString(const std::string& s);

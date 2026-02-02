@@ -572,7 +572,7 @@ bool OpenGLRHIDevice::initialize() {
         std::cerr << "OpenGL context not available. Ensure platform has initialized context and GLAD." << std::endl;
         return false;
     }
-    
+
     initialized = true;
     return true;
 }
