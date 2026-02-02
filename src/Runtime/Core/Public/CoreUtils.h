@@ -105,6 +105,6 @@ private:
 
 #pragma region Globals
 
-extern CORE_API TCHAR GInternalProjectName[64];
+extern TCHAR GInternalProjectName[64];
 
 #pragma endregion

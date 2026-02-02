@@ -1,11 +1,11 @@
 -- Core module for CarrotToy
 
-local kind = get_config("module_kind") or "shared"
-if kind == "shared" then
-    set_kind("shared")
-else
+-- local kind = get_config("module_kind") or "shared"
+-- if kind == "shared" then
+--     set_kind("shared")
+-- else
     set_kind("static")
-end
+-- end
 
 set_basename("Launch")
 
