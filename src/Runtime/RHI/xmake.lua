@@ -10,8 +10,9 @@ end
 set_basename("RHI")
 
 target("RHI")
-    -- collect RHI sources; keep public headers in Public/ for consumers
-    add_packages("glad", "glm", {public = true})
+    -- RHI encapsulates OpenGL/GLAD - don't expose it publicly
+    add_packages("glad")
+    add_packages("glm")
 
     add_files("Private/**.cpp")
     add_headerfiles("Public/**.h")

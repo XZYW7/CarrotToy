@@ -4,10 +4,12 @@
 #include <functional>
 #include <memory>
 #include "EditorAPI.h"
+
 namespace CarrotToy {
 
 class Material;
 class Renderer;
+class ImGuiContext;
 
 // Material Editor UI class - provides ImGui interface for material editing
 class EDITOR_API MaterialEditor{
@@ -38,6 +40,7 @@ private:
     bool initialized = false;
 
     Renderer* renderer;
+    std::shared_ptr<ImGuiContext> imguiContext;
     std::string selectedMaterialName;
     
     // Shader editor state
