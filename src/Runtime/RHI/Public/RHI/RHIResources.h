@@ -2,6 +2,7 @@
 
 #include "RHITypes.h"
 #include <string>
+#include <vector>
 
 namespace CarrotToy {
 namespace RHI {
@@ -82,6 +83,13 @@ public:
     virtual void setUniformMatrix4(const std::string& name, const float* value) = 0;
     
     virtual std::string getLinkErrors() const = 0;
+    
+    // Shader reflection - get uniform blocks and variables
+    virtual std::vector<UniformBlockInfo> getUniformBlocks() const = 0;
+    virtual std::vector<UniformVariableInfo> getUniformVariables() const = 0;
+    
+    // Get native program handle (for compatibility during transition)
+    virtual uintptr_t getNativeHandle() const { return 0; }
 };
 
 // Texture interface

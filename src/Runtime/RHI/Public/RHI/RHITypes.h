@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 // RHI API export/import macro
 #ifndef RHI_API
@@ -182,16 +183,27 @@ struct TextureDesc {
         , initialData(nullptr) {}
 };
 
+// Shader source format
+enum class ShaderSourceFormat {
+    GLSL,       // GLSL source code
+    SPIRV,      // SPIR-V binary
+    HLSL        // HLSL source code (for future support)
+};
+
 // Shader descriptor
 struct ShaderDesc {
     ShaderType type;
     const char* source;
     size_t sourceSize;
+    ShaderSourceFormat format;
+    const char* entryPoint;  // Entry point for SPIR-V/HLSL (e.g., "VSMain", "PSMain")
     
     ShaderDesc()
         : type(ShaderType::Vertex)
         , source(nullptr)
-        , sourceSize(0) {}
+        , sourceSize(0)
+        , format(ShaderSourceFormat::GLSL)
+        , entryPoint(nullptr) {}
 };
 
 // Framebuffer descriptor
@@ -204,6 +216,21 @@ struct FramebufferDesc {
         : width(0)
         , height(0)
         , hasDepthStencil(true) {}
+};
+
+// Shader reflection data structures
+struct UniformBlockInfo {
+    std::string name;
+    uint32_t binding;
+    uint32_t size;
+    uint32_t blockIndex;
+};
+
+struct UniformVariableInfo {
+    std::string name;
+    uint32_t blockIndex;
+    int32_t offset;
+    uint32_t size;
 };
 
 } // namespace RHI
