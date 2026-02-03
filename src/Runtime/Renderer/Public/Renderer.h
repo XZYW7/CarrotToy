@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include "Platform/Platform.h"
+#include "Platform/PlatformContext.h"
 #include "Input/InputDevice.h"
 #include "RendererAPI.h"
 
@@ -51,6 +52,7 @@ public:
     void performOfflineRayTrace(const std::string& scenePath, const std::string& outputPath);
     
 private:
+    std::shared_ptr<Platform::PlatformContext> platformContext;
     std::shared_ptr<Platform::IPlatform> platform;
     std::shared_ptr<Platform::IPlatformWindow> window;
     std::shared_ptr<Input::IInputDevice> inputDevice;

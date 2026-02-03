@@ -12,6 +12,7 @@ set_basename("Platform")
 target("Platform")
     -- Platform is a foundational module with minimal dependencies
     add_packages("glfw", {public = true})
+    add_packages("glad", "imgui")
     
     add_files("Private/**.cpp")
     add_headerfiles("Public/**.h")

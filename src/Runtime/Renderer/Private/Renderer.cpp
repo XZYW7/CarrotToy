@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "Material.h"
+#include "Platform/PlatformContext.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -12,8 +13,8 @@
 namespace CarrotToy {
 
 Renderer::Renderer() 
-    : platform(nullptr), window(nullptr), inputDevice(nullptr), width(800), height(600), 
-      renderMode(RenderMode::Rasterization),
+    : platformContext(nullptr), platform(nullptr), window(nullptr), inputDevice(nullptr), 
+      width(800), height(600), renderMode(RenderMode::Rasterization),
       sphereVAO(0), sphereVBO(0), sphereEBO(0),
       previewFBO(0), previewTexture(0) {
 }
@@ -26,6 +27,19 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     width = w;
     height = h;
     
+    // Create platform context - this will manage GLFW and GLAD initialization
+    platformContext = Platform::createPlatformContext();
+    if (!platformContext) {
+        std::cerr << "Failed to create platform context" << std::endl;
+        return false;
+    }
+    
+    // Initialize platform (GLFW)
+    if (!platformContext->initializePlatform()) {
+        std::cerr << "Failed to initialize platform" << std::endl;
+        return false;
+    }
+    
     // Create platform
     platform = Platform::createPlatform();
     if (!platform) {
@@ -33,11 +47,7 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
         return false;
     }
     
-    // Initialize platform
-    if (!platform->initialize()) {
-        std::cerr << "Failed to initialize platform" << std::endl;
-        return false;
-    }
+    // Note: Platform already initialized by platformContext, so skip platform->initialize()
     
     // Create window
     Platform::WindowDesc windowDesc;
@@ -68,44 +78,30 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
         glViewport(0, 0, width, height);
     });
     
-    // Initialize GLAD using platform's proc address loader
-    // Use thread-local to store window pointer for the loader lambda
-    // This allows a non-capturing lambda that can convert to function pointer
-    thread_local Platform::IPlatformWindow* loaderWindow = nullptr;
-    loaderWindow = window.get();
-    
-    auto gladLoader = [](const char* name) -> void* {
-        return loaderWindow ? loaderWindow->getProcAddress(name) : nullptr;
-    };
-    
-    // Correct Initialization Flow: Window -> Context -> GLAD -> RHI Device
-    LOG("Renderer: Initializing GLAD...");
-    if (!gladLoadGLLoader((GLADloadproc)+gladLoader)) {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
-        loaderWindow = nullptr;
+    // Initialize graphics context (GLAD) using the platform context
+    LOG("Renderer: Initializing graphics context (GLAD)...");
+    if (!platformContext->initializeGraphicsContext(window.get())) {
+        std::cerr << "Failed to initialize graphics context" << std::endl;
         return false;
     }
     
-    LOG("Renderer: Creating and initializing global RHI device (OpenGL backend)...");
+    // Create and initialize RHI device
+    LOG("Renderer: Creating and initializing RHI device (OpenGL backend)...");
     auto rhiDevice = CarrotToy::RHI::createRHIDevice(CarrotToy::RHI::GraphicsAPI::OpenGL);
     if (!rhiDevice) {
         std::cerr << "Failed to create RHI device" << std::endl;
-        loaderWindow = nullptr;
         return false;
     }
     
-    // Pass the loader to RHI so it can initialize its local GLAD instance
-    // This is required for cross-DLL scenarios (RHI needs its own function pointers)
-    if (!rhiDevice->initialize(+gladLoader)) {
+    // Pass the proc address loader to RHI for cross-DLL scenarios
+    auto loader = platformContext->getProcAddressLoader();
+    if (!rhiDevice->initialize(loader)) {
         std::cerr << "Failed to initialize RHI device" << std::endl;
-        loaderWindow = nullptr;
         return false;
     }
     
     CarrotToy::RHI::setGlobalDevice(rhiDevice);
     LOG("Renderer: RHI device initialized and registered globally.");
-    
-    loaderWindow = nullptr;  // Clear after initialization
     
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
@@ -126,8 +122,14 @@ void Renderer::shutdown() {
     // Shutdown window and platform
     window.reset();
     if (platform) {
-        platform->shutdown();
+        // Note: We don't call platform->shutdown() here because platformContext manages it
         platform.reset();
+    }
+    
+    // Shutdown platform context
+    if (platformContext) {
+        platformContext->shutdownPlatform();
+        platformContext.reset();
     }
 }
 

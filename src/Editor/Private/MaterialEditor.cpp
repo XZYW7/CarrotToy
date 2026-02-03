@@ -1,10 +1,8 @@
 #include "MaterialEditor.h"
 #include "Material.h"
 #include "Renderer.h"
+#include "Platform/ImGuiContext.h"
 #include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-#include <GLFW/glfw3.h>
 #include <iostream>
 #include <fstream>
 #include <cstring>
@@ -83,7 +81,7 @@ void MaterialEditor::loadCurrentShaderSources() {
 }
 
 MaterialEditor::MaterialEditor() 
-    : renderer(nullptr), shaderEditorOpen(false) {
+    : renderer(nullptr), imguiContext(nullptr), shaderEditorOpen(false) {
     vertexShaderBuffer[0] = '\0';
     fragmentShaderBuffer[0] = '\0';
 }
@@ -98,79 +96,47 @@ bool MaterialEditor::initialize(Renderer* r) {
     initialized = true;
     renderer = r;
 
-    // TODO : Distangle the Imgui Logic from editor
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    // Create ImGui context using the new abstraction
+    imguiContext = createImGuiContext();
+    if (!imguiContext) {
+        std::cerr << "Failed to create ImGui context" << std::endl;
+        return false;
+    }
     
-    // Setup style
-    ImGui::StyleColorsDark();
-    
-    // Setup Platform/Renderer backends
-    // Get the native GLFW window handle from the platform-abstracted window
-    GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(renderer->getWindowHandle());
-    ImGui_ImplGlfw_InitForOpenGL(glfwWindow, true);
-    ImGui_ImplOpenGL3_Init("#version 460");
+    // Initialize ImGui with the renderer's window
+    if (!imguiContext->initialize(renderer->getWindow().get())) {
+        std::cerr << "Failed to initialize ImGui context" << std::endl;
+        return false;
+    }
     
     return initialized;
 }
 
 void MaterialEditor::shutdown() {
-    if (ImGui::GetCurrentContext() == nullptr) 
-    {
-        std::cerr << "MaterialEditor::shutdown called but ImGui context is null!" << std::endl;
-        return;
+    if (imguiContext) {
+        imguiContext->shutdown();
+        imguiContext.reset();
     }
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
     renderer = nullptr;
     initialized = false;
 }
 
 void MaterialEditor::render() {
-    // Start ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    
-    // Fix: Force update DisplaySize and Scale BEFORE NewFrame if GLFW fails to provide it
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.DisplaySize.x <= 0 || io.DisplaySize.y <= 0) {
-        if (renderer && renderer->getWindow()) {
-            uint32_t w, h;
-            renderer->getWindow()->getSize(w, h);
-            uint32_t fw, fh;
-            renderer->getWindow()->getFramebufferSize(fw, fh);
-
-            io.DisplaySize = ImVec2((float)w, (float)h);
-            if (io.DisplaySize.x > 0 && io.DisplaySize.y > 0) {
-                 io.DisplayFramebufferScale = ImVec2((float)fw / w, (float)fh / h);
-            }
-            
-            // Fix: Manually inject input events since Callbacks via ImGui_ImplGlfw won't fire across DLL boundary
-            // if strict static linking of GLFW is in play.
-            double mx, my;
-            renderer->getCursorPos(mx, my);
-            io.MousePos = ImVec2((float)mx, (float)my);
-            
-            io.MouseDown[0] = renderer->getMouseButton(0); // Left
-            io.MouseDown[1] = renderer->getMouseButton(1); // Right
-            io.MouseDown[2] = renderer->getMouseButton(2); // Middle
-        }
+    if (!imguiContext || !imguiContext->isInitialized()) {
+        std::cerr << "MaterialEditor::render called but ImGui context is not initialized" << std::endl;
+        return;
     }
-
-    ImGui::NewFrame();
- 
+    
+    // Begin ImGui frame using the abstraction
+    imguiContext->beginFrame();
+  
     showMaterialList();
     showMaterialProperties();
     showShaderEditor();
     showPreviewWindow();
     
-    // Render ImGui
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    // End ImGui frame and render
+    imguiContext->endFrame();
 }
 
 std::shared_ptr<Material> MaterialEditor::getSelectedMaterial() const {
