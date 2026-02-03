@@ -88,6 +88,14 @@ public:
     WindowHandle getNativeHandle() const override {
         return window_;
     }
+
+    void getCursorPos(double& x, double& y) const override {
+        glfwGetCursorPos(window_, &x, &y);
+    }
+
+    bool getMouseButton(int button) const override {
+        return glfwGetMouseButton(window_, button) == GLFW_PRESS;
+    }
     
     void setResizeCallback(ResizeCallback callback) override {
         resizeCallback_ = callback;

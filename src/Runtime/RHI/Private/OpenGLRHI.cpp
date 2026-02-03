@@ -562,15 +562,42 @@ OpenGLRHIDevice::~OpenGLRHIDevice() {
     shutdown();
 }
 
-bool OpenGLRHIDevice::initialize() {
+bool OpenGLRHIDevice::initialize(ProcAddressLoader loader) {
     // OpenGL context and loader (GLAD) should already be initialized by the Platform layer
-    // This is just a validation check to ensure OpenGL is available
-    // Verify that we can get OpenGL version (confirms context is active and loaded)
+    // However, if RHI is in a separate DLL, we MUST initialize GLAD here as well to populate
+    // this DLL's function pointers.
+    
+    // 1. If loader provided, use it to init GLAD (Preferred for cross-DLL)
+    if (loader) {
+        if (!gladLoadGLLoader((GLADloadproc)loader)) {
+            std::cerr << "Failed to initialize GLAD using provided loader!" << std::endl;
+            return false;
+        }
+    } else {
+        // Fallback: Check context strictly (this fails if GLFW state is separate)
+        if (!glfwGetCurrentContext()) {
+            std::cerr << "CRITICAL: No OpenGL context current on this thread! RHI cannot initialize." << std::endl;
+            // NOTE: If we are in a separate DLL with static GLFW, this check is invalid. 
+            // We should ideally rely on the loader.
+            // For now, if no loader provided, execute this check.
+            return false;
+        }
+
+        // 2. Initialize GLAD for this module (RHI)
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+            std::cerr << "Failed to initialize GLAD in RHI module. Function pointers will be null!" << std::endl;
+            return false;
+        }
+    }
+
+    // 3. Verify that we can get OpenGL version (confirms context is active and loaded)
     const GLubyte* version = glGetString(GL_VERSION);
     if (!version) {
-        std::cerr << "OpenGL context not available. Ensure platform has initialized context and GLAD." << std::endl;
+        std::cerr << "OpenGL context not available. glGetString returned NULL." << std::endl;
         return false;
     }
+    
+    LOG("OpenGLRHI: Initialized. Version: " << (const char*)version);
 
     initialized = true;
     return true;

@@ -9,7 +9,10 @@ if is_plat("windows") then
 end
 add_rules("mode.debug", "mode.release")
 
-add_requires("glfw", "glm", "stb", "directxshadercompiler", 
+-- Force GLFW to be shared (DLL) to ensure state is shared across modules
+add_requires("glfw", {configs = {shared = true}})
+
+add_requires("glm", "stb", "directxshadercompiler", 
     {configs = {
     }}
 )

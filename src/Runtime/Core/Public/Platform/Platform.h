@@ -64,6 +64,10 @@ public:
     
     // Native handle access (for RHI integration)
     virtual WindowHandle getNativeHandle() const = 0;
+
+    // Input polling (Manual query needed for cross-module boundaries)
+    virtual void getCursorPos(double& x, double& y) const = 0;
+    virtual bool getMouseButton(int button) const = 0;
     
     // Callbacks
     using ResizeCallback = std::function<void(uint32_t width, uint32_t height)>;

@@ -39,6 +39,10 @@ public:
     
     void setRenderMode(RenderMode mode) { renderMode = mode; }
     RenderMode getRenderMode() const { return renderMode; }
+
+    // Input proxies
+    void getCursorPos(double& x, double& y) const;
+    bool getMouseButton(int button) const;
     
     // Offline ray tracing
     void exportSceneForRayTracing(const std::string& outputPath);

@@ -13,8 +13,10 @@ class IRHIDevice {
 public:
     virtual ~IRHIDevice() = default;
     
+    using ProcAddressLoader = void* (*)(const char* name);
+
     // Device initialization and shutdown
-    virtual bool initialize() = 0;
+    virtual bool initialize(ProcAddressLoader loader = nullptr) = 0;
     virtual void shutdown() = 0;
     
     // Get graphics API type
