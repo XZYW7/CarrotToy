@@ -102,18 +102,23 @@ if (!gladLoadGLLoader((GLADloadproc)+gladLoader)) {
 t_gladWindow = nullptr;  // Clear after all initializations
 ```
 
-**After** (simple lambda capture):
+**After** (non-capturing lambda with thread-local):
 ```cpp
 // Initialize GLAD using platform's proc address loader
-// Create a simple lambda that wraps the window's getProcAddress
-auto gladLoader = [this](const char* name) -> void* {
-    return window ? window->getProcAddress(name) : nullptr;
+// Use thread-local to store window pointer for the loader lambda
+// This allows a non-capturing lambda that can convert to function pointer
+thread_local Platform::IPlatformWindow* loaderWindow = nullptr;
+loaderWindow = window.get();
+
+auto gladLoader = [](const char* name) -> void* {
+    return loaderWindow ? loaderWindow->getProcAddress(name) : nullptr;
 };
 
 // Correct Initialization Flow: Window -> Context -> GLAD -> RHI Device
 LOG("Renderer: Initializing GLAD...");
 if (!gladLoadGLLoader((GLADloadproc)+gladLoader)) {
     std::cerr << "Failed to initialize GLAD" << std::endl;
+    loaderWindow = nullptr;
     return false;
 }
 
@@ -121,6 +126,7 @@ LOG("Renderer: Creating and initializing global RHI device (OpenGL backend)...")
 auto rhiDevice = CarrotToy::RHI::createRHIDevice(CarrotToy::RHI::GraphicsAPI::OpenGL);
 if (!rhiDevice) {
     std::cerr << "Failed to create RHI device" << std::endl;
+    loaderWindow = nullptr;
     return false;
 }
 
@@ -128,6 +134,7 @@ if (!rhiDevice) {
 // This is required for cross-DLL scenarios (RHI needs its own function pointers)
 if (!rhiDevice->initialize(+gladLoader)) {
     std::cerr << "Failed to initialize RHI device" << std::endl;
+    loaderWindow = nullptr;
     return false;
 }
 
@@ -195,8 +202,11 @@ auto window = platform->createWindow(windowDesc);
 window->makeContextCurrent();
 
 // 2. Create proc address loader from window
-auto loader = [&window](const char* name) -> void* {
-    return window->getProcAddress(name);
+// Note: Must be non-capturing lambda to convert to function pointer
+// Use thread-local or captured reference depending on context
+thread_local Platform::IPlatformWindow* loaderWindow = window.get();
+auto loader = [](const char* name) -> void* {
+    return loaderWindow ? loaderWindow->getProcAddress(name) : nullptr;
 };
 
 // 3. Initialize GLAD in your module
@@ -251,6 +261,23 @@ rhiDevice->initialize(+loader);  // Provide the loader
 ```
 
 ## Technical Details
+
+### Important: Lambda Captures and Function Pointers
+
+⚠️ **Critical constraint**: GLAD's `gladLoadGLLoader` requires a C function pointer, which means the lambda **must be non-capturing**.
+
+```cpp
+// ❌ WRONG - This won't compile!
+auto loader = [this](const char* name) { return window->getProcAddress(name); };
+gladLoadGLLoader((GLADloadproc)+loader);  // ERROR: cannot convert capturing lambda
+
+// ✅ CORRECT - Non-capturing lambda using thread-local
+thread_local Platform::IPlatformWindow* loaderWindow = window.get();
+auto loader = [](const char* name) { return loaderWindow->getProcAddress(name); };
+gladLoadGLLoader((GLADloadproc)+loader);  // OK: converts to function pointer
+```
+
+The unary `+` operator can only convert **non-capturing** lambdas to function pointers. Any capture (like `[this]`, `[&window]`, etc.) makes this conversion impossible, resulting in a compilation error.
 
 ### Why ProcAddressLoader is Needed
 
