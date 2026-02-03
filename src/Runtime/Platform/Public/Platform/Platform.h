@@ -52,7 +52,7 @@ public:
 };
 
 // Window interface - abstracts platform window
-class IPlatformWindow {
+class PLATFORM_API IPlatformWindow {
 public:
     virtual ~IPlatformWindow() = default;
     
@@ -92,7 +92,7 @@ public:
 PLATFORM_API std::shared_ptr<IPlatform> createPlatform();
 
 // Get current platform type (compile-time detection)
-PlatformType getCurrentPlatformType();
+PLATFORM_API PlatformType getCurrentPlatformType();
 
 } // namespace Platform
 } // namespace CarrotToy

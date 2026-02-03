@@ -48,7 +48,7 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     windowDesc.resizable = true;
     windowDesc.vsync = true;
     
-    window = platformSubsystem.CreateWindow(windowDesc);
+    window = platformSubsystem.CreatePlatformWindow(windowDesc);
     if (!window) {
         std::cerr << "Renderer: Failed to create window" << std::endl;
         return false;

@@ -11,6 +11,7 @@
 #include "RendererModule.h"
 #include "RHI/RHIModuleInit.h"
 #include "Platform/PlatformModuleInit.h"
+#include "Input/InputModule.h" // Include Input module init header
 using namespace CarrotToy;
 
 
@@ -58,6 +59,7 @@ void FMainLoop::LoadPreInitModules()
     // This ensures modules are registered with FModuleManager before we try to load them
     InitializeModuleCoreEngine();
     InitializeModulePlatform();  // Initialize Platform module first
+    InitializeModuleInput();     // Initialize Input module
     InitializeModuleRHI();
     InitializeModuleRenderer();
     InitializeModuleEditor();
@@ -74,6 +76,7 @@ void FMainLoop::LoadPreInitModules()
     FModuleManager::Get().LoadModule("CoreEngine");
     FModuleManager::Get().LoadModule("Launch");
     FModuleManager::Get().LoadModule("Platform");  // Load Platform before RHI
+    FModuleManager::Get().LoadModule("Input");     // Load Input module
     FModuleManager::Get().LoadModule("RHI");
     FModuleManager::Get().LoadModule("Renderer");
     FModuleManager::Get().LoadModule("Editor");
@@ -128,13 +131,13 @@ bool FMainLoop::Init()
         defaultMaterial->setFloat("metallic", 0.5f);
         defaultMaterial->setFloat("roughness", 0.5f);
 
-        // Initialize material editor
-        auto& editorMod = FModuleManager::Get().GetModuleChecked<FEditorModule>("Editor");
-        editor = editorMod.CreateEditor(renderer.get());
-        if (!editor) {
-            std::cerr << "Failed to initialize material editor" << std::endl;
-            return false;
-        }
+        // // Initialize material editor
+        // auto& editorMod = FModuleManager::Get().GetModuleChecked<FEditorModule>("Editor");
+        // editor = editorMod.CreateEditor(renderer.get());
+        // if (!editor) {
+        //     std::cerr << "Failed to initialize material editor" << std::endl;
+        //     return false;
+        // }
 
     } catch (const std::exception& e) {
         std::cerr << "Exception in Init(): " << e.what() << std::endl;
@@ -180,7 +183,7 @@ void FMainLoop::Tick()
         if (selected) renderer->renderMaterialPreview(selected);
 
         // UI
-        if (editor) editor->render();
+        // if (editor) editor->render();
 
         renderer->endFrame();
 
@@ -214,10 +217,10 @@ void FMainLoop::Exit()
     LOG("FMainLoop: Exiting");
     
     // reverse-order cleanup
-    if (editor) {
-        editor->shutdown();
-        editor.reset();
-    }
+    // if (editor) {
+    //     editor->shutdown();
+    //     editor.reset();
+    // }
     if (renderer) {
         renderer->shutdown();
         renderer.reset();

@@ -14,7 +14,7 @@ target("Launch")
     add_files("Private/**.cpp")
     add_headerfiles("Public/**.h")
     add_includedirs("Public", {public = true})
-    add_deps("Renderer", "Editor")
+    add_deps("Renderer", "Editor", "Input")
     
     -- Add defines for shared library build
     if kind == "shared" then

@@ -49,7 +49,7 @@ bool PlatformSubsystem::Initialize() {
     return true;
 }
 
-std::shared_ptr<IPlatformWindow> PlatformSubsystem::CreateWindow(const WindowDesc& desc) {
+std::shared_ptr<IPlatformWindow> PlatformSubsystem::CreatePlatformWindow(const WindowDesc& desc) {
     if (!initialized) {
         std::cerr << "PlatformSubsystem: Cannot create window - subsystem not initialized" << std::endl;
         return nullptr;

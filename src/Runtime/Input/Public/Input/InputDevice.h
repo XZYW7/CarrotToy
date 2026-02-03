@@ -25,7 +25,7 @@ namespace Platform {
 namespace Input {
 
 // Input device interface - abstracts input polling from a window
-class IInputDevice {
+class INPUT_API IInputDevice {
 public:
     virtual ~IInputDevice() = default;
     

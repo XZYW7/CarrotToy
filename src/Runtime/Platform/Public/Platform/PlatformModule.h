@@ -39,7 +39,7 @@ public:
      * Create a window with the given descriptor
      * Platform must be initialized first
      */
-    std::shared_ptr<IPlatformWindow> CreateWindow(const WindowDesc& desc);
+    std::shared_ptr<IPlatformWindow> CreatePlatformWindow(const WindowDesc& desc);
     
     /**
      * Initialize graphics context (GLAD) for a window
