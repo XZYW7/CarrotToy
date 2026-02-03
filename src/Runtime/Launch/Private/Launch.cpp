@@ -10,6 +10,7 @@
 #include "Modules/EngineModules.h"
 #include "RendererModule.h"
 #include "RHI/RHIModuleInit.h"
+#include "Platform/PlatformModuleInit.h"
 using namespace CarrotToy;
 
 
@@ -56,6 +57,7 @@ void FMainLoop::LoadPreInitModules()
     // Initialize dynamic module DLLs by calling their exported init functions
     // This ensures modules are registered with FModuleManager before we try to load them
     InitializeModuleCoreEngine();
+    InitializeModulePlatform();  // Initialize Platform module first
     InitializeModuleRHI();
     InitializeModuleRenderer();
     InitializeModuleEditor();
@@ -68,9 +70,10 @@ void FMainLoop::LoadPreInitModules()
     }
     
     // Load core engine modules in order
-    // These modules should be loaded before any game or plugin modules
+    // Platform must be loaded before RHI and Renderer
     FModuleManager::Get().LoadModule("CoreEngine");
     FModuleManager::Get().LoadModule("Launch");
+    FModuleManager::Get().LoadModule("Platform");  // Load Platform before RHI
     FModuleManager::Get().LoadModule("RHI");
     FModuleManager::Get().LoadModule("Renderer");
     FModuleManager::Get().LoadModule("Editor");
