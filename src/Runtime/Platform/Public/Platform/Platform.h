@@ -4,7 +4,21 @@
 #include <memory>
 #include <functional>
 #include <vector>
-#include "CoreUtils.h"
+
+#ifndef PLATFORM_API
+    #if defined(_WIN32) || defined(_WIN64)
+        #ifdef PLATFORM_BUILD_SHARED
+            #define PLATFORM_API __declspec(dllexport)
+        #elif defined(PLATFORM_IMPORT_SHARED)
+            #define PLATFORM_API __declspec(dllimport)
+        #else
+            #define PLATFORM_API
+        #endif
+    #else
+        #define PLATFORM_API
+    #endif
+#endif
+
 namespace CarrotToy {
 namespace Platform {
 
@@ -38,7 +52,7 @@ public:
 };
 
 // Window interface - abstracts platform window
-class IPlatformWindow {
+class PLATFORM_API IPlatformWindow {
 public:
     virtual ~IPlatformWindow() = default;
     
@@ -75,10 +89,10 @@ public:
 };
 
 // Factory function to create platform instance
-CORE_API std::shared_ptr<IPlatform> createPlatform();
+PLATFORM_API std::shared_ptr<IPlatform> createPlatform();
 
 // Get current platform type (compile-time detection)
-PlatformType getCurrentPlatformType();
+PLATFORM_API PlatformType getCurrentPlatformType();
 
 } // namespace Platform
 } // namespace CarrotToy

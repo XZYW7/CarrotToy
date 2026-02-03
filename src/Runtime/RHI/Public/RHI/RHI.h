@@ -16,6 +16,9 @@ public:
     using ProcAddressLoader = void* (*)(const char* name);
 
     // Device initialization and shutdown
+    // NOTE: loader parameter is REQUIRED for OpenGL backend to avoid GLFW dependency in RHI
+    //       Pass a function that can load OpenGL function pointers (e.g., window->getProcAddress)
+    //       Example: auto loader = [window](const char* name) { return window->getProcAddress(name); };
     virtual bool initialize(ProcAddressLoader loader = nullptr) = 0;
     virtual void shutdown() = 0;
     

@@ -59,7 +59,9 @@ public:
 private:
     unsigned int shaderID;
     ShaderType type;
+    ShaderSourceFormat format;
     std::string source;
+    std::string entryPoint;
     std::string errors;
 };
 
@@ -85,6 +87,12 @@ public:
     void setUniformMatrix4(const std::string& name, const float* value) override;
     
     std::string getLinkErrors() const override { return errors; }
+    
+    // Reflection API
+    std::vector<UniformBlockInfo> getUniformBlocks() const override;
+    std::vector<UniformVariableInfo> getUniformVariables() const override;
+    
+    uintptr_t getNativeHandle() const override { return programID; }
     
     bool isValid() const override { return programID != 0; }
     void release() override;

@@ -10,8 +10,10 @@ end
 
 set_basename("Core")
 target("Core")
+    -- Core is the foundational module and should not depend on other runtime modules
     -- collect core sources; keep public headers in Public/ for consumers
-    add_packages("glad","glfw","stb","imgui", "glm", {public = true})
+    add_packages("glm", {public = true})
+    add_packages("stb")
     add_files("Private/**.cpp")
     add_headerfiles("Public/**.h")
     add_includedirs("Public", {public = true})

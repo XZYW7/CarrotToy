@@ -4,7 +4,9 @@
 
 ## Features
 
-- **Modular Architecture**: Separate modules for Core, RHI, Launch, and Editor
+- **Modular Architecture**: Clean separation into Platform, Input, Core, RHI, Renderer, Launch, and Editor modules
+- **Platform Abstraction**: Cross-platform window and event management (Windows, Linux, macOS)
+- **Input System**: Dedicated input module for mouse and keyboard handling
 - **Material System**: Create and manage materials with customizable shader parameters
 - **Runtime Shader Editing**: Edit and recompile shaders in real-time without restarting the application
 - **Real-time Rasterization**: OpenGL-based forward rendering with PBR (Physically Based Rendering) shaders
@@ -12,41 +14,48 @@
 - **Material Editor UI**: ImGui-based interface for intuitive material editing
 - **Hot Reload**: Automatic shader reloading when files are modified
 - **PBR Materials**: Built-in physically-based rendering shader support
-- **RHI (Render Hardware Interface)**: Graphics API abstraction layer as a separate module
-- **Platform Abstraction**: Cross-platform window and input management supporting Windows, Linux, and macOS
+- **RHI (Render Hardware Interface)**: Graphics API abstraction layer supporting multiple backends
 - **Multiple Applications**: DefaultGame, TestRHIApp, and CustomModule as independent executables
 
 ## Architecture
 
-The project is organized into modular components:
+The project is organized into modular components with clean separation of concerns:
 
 ```
 CarrotToy/
 ├── src/
 │   ├── Runtime/           # Runtime engine modules
+│   │   ├── Platform/      # Platform abstraction (window, events) - NEW
+│   │   ├── Input/         # Input handling (mouse, keyboard) - NEW
 │   │   ├── Core/          # Core engine functionality
 │   │   ├── RHI/           # Render Hardware Interface (separate module)
+│   │   ├── Renderer/      # High-level rendering system
 │   │   └── Launch/        # Application launcher
-│   ├── Tools/
-│   │   └── Editor/        # Material editor UI
+│   ├── Editor/            # Material editor UI
 │   ├── DefaultGame/       # Default game application (binary)
 │   ├── TestRHIApp/        # RHI testing application (binary)
 │   └── CustomModule/      # Custom module example (binary)
 ├── shaders/               # GLSL/HLSL shader files
+├── docs/                  # Documentation
 └── xmake.lua             # Build configuration
 ```
 
 ### Module Structure
 
-- **Core**: Core engine systems (materials, shaders, rendering, platform abstraction)
-- **RHI**: Graphics API abstraction layer as a separate module
-- **Launch**: Application entry point and initialization
-- **Editor**: ImGui-based material editor
-- **DefaultGame**: Main application executable
-- **TestRHIApp**: RHI testing application
-- **CustomModule**: Example of a custom application module
+The engine follows a layered architecture with well-defined module boundaries:
 
-Each module is built as a separate output target (static/shared library or binary), allowing for modular development and testing.
+- **Platform**: OS and window abstraction layer (GLFW-based, cross-platform)
+- **Input**: Input device abstraction (mouse, keyboard, future: gamepad)
+- **Core**: Core engine systems (materials, shaders, utilities, module system)
+- **RHI**: Graphics API abstraction layer (OpenGL, future: Vulkan, DX12, Metal)
+- **Renderer**: High-level rendering system with material preview and scene rendering
+- **Launch**: Application entry point and main loop with fixed timestep
+- **Editor**: ImGui-based material editor
+- **Applications**: DefaultGame, TestRHIApp, CustomModule executables
+
+Each module is built as a separate library (shared or static), enabling modular development and testing.
+
+For detailed architecture documentation, see [MODULE_ARCHITECTURE.md](docs/MODULE_ARCHITECTURE.md).
 
 ## Requirements
 
@@ -81,13 +90,16 @@ xmake run TestRHIApp
 xmake run CustomModule
 
 # Build specific targets
-xmake build Core          # Core module
-xmake build RHI           # RHI module
-xmake build Launch        # Launch module
-xmake build Editor        # Editor module
-xmake build DefaultGame   # Default game application
-xmake build TestRHIApp    # RHI test application
-xmake build CustomModule  # Custom module application
+xmake build Platform       # Platform module (NEW)
+xmake build Input          # Input module (NEW)
+xmake build Core           # Core module
+xmake build RHI            # RHI module
+xmake build Renderer       # Renderer module
+xmake build Launch         # Launch module
+xmake build Editor         # Editor module
+xmake build DefaultGame    # Default game application
+xmake build TestRHIApp     # RHI test application
+xmake build CustomModule   # Custom module application
 ```
 
 ### Build options

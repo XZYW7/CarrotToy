@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include "CoreUtils.h"
-#include <GLFW/glfw3.h>
+
 namespace CarrotToy {
 namespace RHI {
 
@@ -184,8 +184,14 @@ void OpenGLBuffer::release() {
 
 // OpenGLShader implementation
 OpenGLShader::OpenGLShader(const ShaderDesc& desc)
-    : shaderID(0), type(desc.type), source(desc.source, desc.sourceSize) {
+    : shaderID(0), type(desc.type), format(desc.format), source(desc.source, desc.sourceSize) {
     shaderID = glCreateShader(toGLShaderType(type));
+    if (desc.entryPoint) {
+        entryPoint = desc.entryPoint;
+    } else {
+        // Default entry points
+        entryPoint = (type == ShaderType::Vertex) ? "VSMain" : "PSMain";
+    }
 }
 
 OpenGLShader::~OpenGLShader() {
@@ -193,17 +199,58 @@ OpenGLShader::~OpenGLShader() {
 }
 
 bool OpenGLShader::compile() {
-    const char* src = source.c_str();
-    glShaderSource(shaderID, 1, &src, nullptr);
-    glCompileShader(shaderID);
-    
-    int success;
-    glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetShaderInfoLog(shaderID, 512, nullptr, infoLog);
-        errors = infoLog;
-        return false;
+    if (format == ShaderSourceFormat::SPIRV) {
+        // SPIR-V compilation path
+        // Check for GL_ARB_gl_spirv extension or OpenGL 4.6+
+        if (!GLAD_GL_ARB_gl_spirv && !GLAD_GL_VERSION_4_6) {
+            errors = "GL_ARB_gl_spirv not supported!";
+            return false;
+        }
+
+#ifdef GL_SHADER_BINARY_FORMAT_SPIR_V
+        GLenum binaryFormat = GL_SHADER_BINARY_FORMAT_SPIR_V;
+#elif defined(GL_SHADER_BINARY_FORMAT_SPIR_V_ARB)
+        GLenum binaryFormat = GL_SHADER_BINARY_FORMAT_SPIR_V_ARB;
+#else
+        GLenum binaryFormat = 0x9551; // Fallback constant
+#endif
+
+        if (!glShaderBinary) {
+            errors = "glShaderBinary not available at runtime; cannot load SPIR-V binary.";
+            return false;
+        }
+
+        glShaderBinary(1, &shaderID, binaryFormat, source.data(), (GLsizei)source.size());
+
+        // Specialize the shader with the entry point
+#ifdef GL_ARB_gl_spirv
+        glSpecializeShaderARB(shaderID, entryPoint.c_str(), 0, nullptr, nullptr);
+#else
+        glSpecializeShader(shaderID, entryPoint.c_str(), 0, nullptr, nullptr);
+#endif
+
+        int success;
+        glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            char infoLog[512];
+            glGetShaderInfoLog(shaderID, 512, nullptr, infoLog);
+            errors = infoLog;
+            return false;
+        }
+    } else {
+        // GLSL compilation path
+        const char* src = source.c_str();
+        glShaderSource(shaderID, 1, &src, nullptr);
+        glCompileShader(shaderID);
+        
+        int success;
+        glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            char infoLog[512];
+            glGetShaderInfoLog(shaderID, 512, nullptr, infoLog);
+            errors = infoLog;
+            return false;
+        }
     }
     
     errors.clear();
@@ -343,6 +390,83 @@ void OpenGLShaderProgram::release() {
         glDeleteProgram(programID);
         programID = 0;
     }
+}
+
+std::vector<UniformBlockInfo> OpenGLShaderProgram::getUniformBlocks() const {
+    std::vector<UniformBlockInfo> blocks;
+    
+    if (programID == 0) {
+        return blocks;
+    }
+    
+    GLint numBlocks = 0;
+    glGetProgramiv(programID, GL_ACTIVE_UNIFORM_BLOCKS, &numBlocks);
+    
+    for (GLint blockIndex = 0; blockIndex < numBlocks; ++blockIndex) {
+        UniformBlockInfo info;
+        
+        // Get block name
+        char blockName[256] = {0};
+        glGetActiveUniformBlockName(programID, blockIndex, sizeof(blockName), nullptr, blockName);
+        info.name = blockName;
+        
+        // Get block binding
+        GLint binding = -1;
+        glGetActiveUniformBlockiv(programID, blockIndex, GL_UNIFORM_BLOCK_BINDING, &binding);
+        info.binding = (binding >= 0) ? (uint32_t)binding : 0;
+        
+        // Get block size
+        GLint blockSize = 0;
+        glGetActiveUniformBlockiv(programID, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+        info.size = (uint32_t)blockSize;
+        
+        info.blockIndex = (uint32_t)blockIndex;
+        
+        blocks.push_back(info);
+    }
+    
+    return blocks;
+}
+
+std::vector<UniformVariableInfo> OpenGLShaderProgram::getUniformVariables() const {
+    std::vector<UniformVariableInfo> variables;
+    
+    if (programID == 0) {
+        return variables;
+    }
+    
+    GLint numUniforms = 0;
+    glGetProgramiv(programID, GL_ACTIVE_UNIFORMS, &numUniforms);
+    
+    for (GLint uni = 0; uni < numUniforms; ++uni) {
+        char nameBuf[256] = {0};
+        GLsizei length = 0;
+        GLint size = 0;
+        GLenum type = 0;
+        glGetActiveUniform(programID, uni, sizeof(nameBuf), &length, &size, &type, nameBuf);
+        
+        UniformVariableInfo info;
+        info.name = std::string(nameBuf, length);
+        
+        // Get block index
+        GLint blockIndex = -1;
+        glGetActiveUniformsiv(programID, 1, (const GLuint*)&uni, GL_UNIFORM_BLOCK_INDEX, &blockIndex);
+        info.blockIndex = (blockIndex >= 0) ? (uint32_t)blockIndex : 0;
+        
+        // Get offset (only valid for block members)
+        GLint offset = -1;
+        if (blockIndex >= 0) {
+            glGetActiveUniformsiv(programID, 1, (const GLuint*)&uni, GL_UNIFORM_OFFSET, &offset);
+        }
+        info.offset = offset;
+        
+        // Estimate size based on type (simplified)
+        info.size = (uint32_t)size;
+        
+        variables.push_back(info);
+    }
+    
+    return variables;
 }
 
 // OpenGLTexture implementation
@@ -567,33 +691,24 @@ bool OpenGLRHIDevice::initialize(ProcAddressLoader loader) {
     // However, if RHI is in a separate DLL, we MUST initialize GLAD here as well to populate
     // this DLL's function pointers.
     
-    // 1. If loader provided, use it to init GLAD (Preferred for cross-DLL)
-    if (loader) {
-        if (!gladLoadGLLoader((GLADloadproc)loader)) {
-            std::cerr << "Failed to initialize GLAD using provided loader!" << std::endl;
-            return false;
-        }
-    } else {
-        // Fallback: Check context strictly (this fails if GLFW state is separate)
-        if (!glfwGetCurrentContext()) {
-            std::cerr << "CRITICAL: No OpenGL context current on this thread! RHI cannot initialize." << std::endl;
-            // NOTE: If we are in a separate DLL with static GLFW, this check is invalid. 
-            // We should ideally rely on the loader.
-            // For now, if no loader provided, execute this check.
-            return false;
-        }
-
-        // 2. Initialize GLAD for this module (RHI)
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-            std::cerr << "Failed to initialize GLAD in RHI module. Function pointers will be null!" << std::endl;
-            return false;
-        }
+    // Require proc address loader to avoid GLFW dependency in RHI
+    if (!loader) {
+        std::cerr << "ERROR: RHI initialization requires a valid ProcAddressLoader!" << std::endl;
+        std::cerr << "       Platform layer must provide getProcAddress function." << std::endl;
+        return false;
+    }
+    
+    // Initialize GLAD using the provided loader (handles cross-DLL scenarios)
+    if (!gladLoadGLLoader((GLADloadproc)loader)) {
+        std::cerr << "Failed to initialize GLAD using provided loader!" << std::endl;
+        return false;
     }
 
-    // 3. Verify that we can get OpenGL version (confirms context is active and loaded)
+    // Verify that we can get OpenGL version (confirms context is active and loaded)
     const GLubyte* version = glGetString(GL_VERSION);
     if (!version) {
         std::cerr << "OpenGL context not available. glGetString returned NULL." << std::endl;
+        std::cerr << "Ensure OpenGL context is current before initializing RHI." << std::endl;
         return false;
     }
     

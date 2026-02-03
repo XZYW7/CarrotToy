@@ -127,6 +127,17 @@ public:
             return true;
         }
         
+        // Check if GLFW is already initialized (by PlatformContext)
+        // If it is, we just mark ourselves as initialized
+        // This allows both PlatformContext and Platform to coexist
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        if (monitor != nullptr) {
+            // GLFW is already initialized
+            std::cout << "Platform: GLFW already initialized, reusing existing context" << std::endl;
+            initialized_ = true;
+            return true;
+        }
+        
         if (!glfwInit()) {
             std::cerr << "Failed to initialize GLFW" << std::endl;
             return false;

@@ -1,29 +1,29 @@
 #pragma once
 
 #include <string>
-#include <glad/glad.h>
 #include <vector>
 #include <set>
 #include <map>
 #include <memory>
 #include "RHI/RHI.h"
 #include "RendererAPI.h"
+
 namespace CarrotToy {
-// --- 通用 UBO 缓存结构 ---
-// TODO：Support RHI abstraction layer
+
+// --- UBO 缓存结构 (now using RHI types) ---
 struct UBOVarLocation {
-    GLuint uboID;
-    GLint offset;
+    uintptr_t uboID;  // RHI native handle
+    int32_t offset;
 };
 
 struct ProgramUBOCache {
-    std::vector<GLuint> uboIDs; // 所有的 UBO Handle，用于析构时删除
-    std::map<std::string, UBOVarLocation> vars; // 变量名 -> {UBO ID, Offset}
+    std::vector<uintptr_t> uboIDs; // All UBO Handles for cleanup
+    std::map<std::string, UBOVarLocation> vars; // Variable name -> {UBO ID, Offset}
 };
 
-static std::map<GLuint, ProgramUBOCache> g_ProgramUBOs;
+static std::map<uintptr_t, ProgramUBOCache> g_ProgramUBOs;
 
-// Shader class - manages shader compilation and hot-reloading
+// Shader class - manages shader compilation and hot-reloading via RHI
 class RENDERER_API Shader {
 public:
     Shader(const std::string& vertexPath, const std::string& fragmentPath);
@@ -33,7 +33,7 @@ public:
     void reload();
     bool compile(const std::string& vertexSource, const std::string& fragmentSource);
     
-    unsigned int getID() const { return programID; }
+    uintptr_t getID() const;
     
     // Uniform setters
     void setFloat(const std::string& name, float value);
@@ -43,37 +43,46 @@ public:
     void setInt(const std::string& name, int value);
     void setBool(const std::string& name, bool value);
     void setMatrix4(const std::string& name, const float* value);
-    // High-level convenience uploads (typed, avoid relying on string names everywhere)
+    
+    // High-level convenience uploads
     void setPerFrameMatrices(const float* model, const float* view, const float* projection);
     void setLightData(const float* lightPos, const float* lightColor, const float* viewPos);
+    
     // Material block helpers
     size_t getMaterialUBOSize() const { return materialUBOSize; }
     void updateMaterialBlock(const void* data, size_t size);
-    // Query existing cached UBO offset (from reflection) for a given field name
-    GLint getUBOOffset(const std::string& field) const;
+    
+    // Query cached UBO offset (from reflection) for a given field name
+    int32_t getUBOOffset(const std::string& field) const;
 
     std::string getVertexPath() const { return vertexPath; }
     std::string getFragmentPath() const { return fragmentPath; }
-    int getVertexShaderID() const { return vertexShaderID; }
-    int getFragmentShaderID() const { return fragmentShaderID; }
+    
     bool linkProgram();
+    
 private:
     bool linked = false;
-    unsigned int programID;
     std::string vertexPath;
     std::string fragmentPath;
-    // Optional RHI-backed uniform buffers for faster/typed uploads
+    
+    // RHI shader objects
+    std::shared_ptr<CarrotToy::RHI::IRHIShader> vertexShader;
+    std::shared_ptr<CarrotToy::RHI::IRHIShader> fragmentShader;
+    std::shared_ptr<CarrotToy::RHI::IRHIShaderProgram> shaderProgram;
+    
+    // RHI-backed uniform buffers
     std::shared_ptr<CarrotToy::RHI::IRHIUniformBuffer> perFrameUBO;
     std::shared_ptr<CarrotToy::RHI::IRHIUniformBuffer> lightUBO;
+    std::shared_ptr<CarrotToy::RHI::IRHIUniformBuffer> materialUBO;
     size_t perFrameUBOSize = 0;
     size_t lightUBOSize = 0;
-    std::shared_ptr<CarrotToy::RHI::IRHIUniformBuffer> materialUBO;
     size_t materialUBOSize = 0;
     
-    bool compileShader(unsigned int& shader, int type, const std::string& source);
-    
-    bool linkProgram(unsigned int vertex, unsigned int fragment);
-    int vertexShaderID = 0;
-    int fragmentShaderID = 0;
+    bool compileShader(std::shared_ptr<CarrotToy::RHI::IRHIShader>& shader, 
+                       CarrotToy::RHI::ShaderType type, 
+                       const std::string& source,
+                       CarrotToy::RHI::ShaderSourceFormat format);
 };
+
 }
+

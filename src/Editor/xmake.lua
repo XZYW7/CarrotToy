@@ -10,8 +10,9 @@ end
 set_basename("Editor")
 
 target("Editor")
-    -- collect editor sources; keep public headers in Public/ for consumers
-    add_packages("glad","glfw","stb","imgui", "glm", {public = true})
+    -- Editor now uses Platform's ImGui abstraction
+    -- Only need imgui for ImGui:: API calls, not the backends
+    add_packages("imgui")
 
     add_files("Private/**.cpp")
     add_headerfiles("Public/**.h")

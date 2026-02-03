@@ -1,5 +1,7 @@
 #include "Renderer.h"
 #include "Material.h"
+#include "Platform/PlatformModule.h"
+#include "RHI/RHIModuleInit.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -7,11 +9,13 @@
 #include <iostream>
 #include <cmath>
 #include "CoreUtils.h"
+#include "Input/InputDevice.h"
+
 namespace CarrotToy {
 
 Renderer::Renderer() 
-    : platform(nullptr), window(nullptr), width(800), height(600), 
-      renderMode(RenderMode::Rasterization),
+    : window(nullptr), cachedPlatform(nullptr), inputDevice(nullptr), 
+      width(800), height(600), renderMode(RenderMode::Rasterization),
       sphereVAO(0), sphereVBO(0), sphereEBO(0),
       previewFBO(0), previewTexture(0) {
 }
@@ -24,20 +28,19 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     width = w;
     height = h;
     
-    // Create platform
-    platform = Platform::createPlatform();
-    if (!platform) {
-        std::cerr << "Failed to create platform" << std::endl;
-        return false;
+    LOG("Renderer: Initializing...");
+    
+    // Get Platform subsystem (should already be initialized by Platform module)
+    auto& platformSubsystem = Platform::PlatformSubsystem::Get();
+    if (!platformSubsystem.IsInitialized()) {
+        std::cerr << "Renderer: Platform subsystem not initialized. Initializing now..." << std::endl;
+        if (!platformSubsystem.Initialize()) {
+            std::cerr << "Renderer: Failed to initialize Platform subsystem" << std::endl;
+            return false;
+        }
     }
     
-    // Initialize platform
-    if (!platform->initialize()) {
-        std::cerr << "Failed to initialize platform" << std::endl;
-        return false;
-    }
-    
-    // Create window
+    // Create window through Platform subsystem
     Platform::WindowDesc windowDesc;
     windowDesc.width = w;
     windowDesc.height = h;
@@ -45,9 +48,16 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     windowDesc.resizable = true;
     windowDesc.vsync = true;
     
-    window = platform->createWindow(windowDesc);
+    window = platformSubsystem.CreatePlatformWindow(windowDesc);
     if (!window) {
-        std::cerr << "Failed to create window" << std::endl;
+        std::cerr << "Renderer: Failed to create window" << std::endl;
+        return false;
+    }
+    
+    // Create input device for the window
+    inputDevice = Input::createInputDevice(window);
+    if (!inputDevice) {
+        std::cerr << "Renderer: Failed to create input device" << std::endl;
         return false;
     }
     
@@ -59,39 +69,29 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
         glViewport(0, 0, width, height);
     });
     
-    // Initialize GLAD using platform's proc address loader
-    // Store raw pointer temporarily for GLAD initialization (thread-local for safety)
-    thread_local Platform::IPlatformWindow* t_gladWindow = nullptr;
-    t_gladWindow = window.get();
-    
-    auto gladLoader = [](const char* name) -> void* {
-        return t_gladWindow ? t_gladWindow->getProcAddress(name) : nullptr;
-    };
-    
-    // Correct Initialization Flow: Window -> Context -> GLAD -> RHI Device
-    LOG("Renderer: Initializing GLAD...");
-    // Force conversion to function pointer for GLAD
-    if (!gladLoadGLLoader((GLADloadproc)+gladLoader)) {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
-        t_gladWindow = nullptr;
+    // Initialize graphics context (GLAD) through Platform subsystem
+    LOG("Renderer: Initializing graphics context (GLAD) through Platform subsystem...");
+    if (!platformSubsystem.InitializeGraphicsContext(window.get())) {
+        std::cerr << "Renderer: Failed to initialize graphics context" << std::endl;
         return false;
     }
     
-    LOG("Renderer: Creating and initializing global RHI device (OpenGL backend)...");
-    auto rhiDevice = CarrotToy::RHI::createRHIDevice(CarrotToy::RHI::GraphicsAPI::OpenGL);
-    if (rhiDevice) {
-        // Pass the loader to RHI so it can initialize its local GLAD instance
-        // even if GLFW state is separate (DLL boundaries)
-        // Keep t_gladWindow valid during this call
-        if (!rhiDevice->initialize(+gladLoader)) {
-            std::cerr << "Failed to initialize RHI device" << std::endl;
-            t_gladWindow = nullptr;
+    // Get RHI subsystem (should be ready but not initialized yet)
+    auto& rhiSubsystem = RHI::RHISubsystem::Get();
+    if (!rhiSubsystem.IsInitialized()) {
+        LOG("Renderer: Initializing RHI subsystem (OpenGL backend)...");
+        // Get proc address loader from Platform for cross-DLL GLAD initialization
+        auto loader = platformSubsystem.GetProcAddressLoader();
+        if (!rhiSubsystem.Initialize(RHI::GraphicsAPI::OpenGL, loader)) {
+            std::cerr << "Renderer: Failed to initialize RHI subsystem" << std::endl;
             return false;
         }
-        CarrotToy::RHI::setGlobalDevice(rhiDevice);
-        LOG("Renderer: RHI device initialized and registered globally.");
     }
-    t_gladWindow = nullptr;  // Clear after all initializations
+    
+    LOG("Renderer: RHI device initialized and registered globally.");
+    
+    // Cache platform pointer for efficient per-frame access (e.g., getTime())
+    cachedPlatform = platformSubsystem.GetPlatform();
     
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
@@ -99,22 +99,28 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     setupPreviewGeometry();
     setupFramebuffer();
     
+    LOG("Renderer: Initialized successfully");
     return true;
 }
 
 void Renderer::shutdown() {
+    LOG("Renderer: Shutting down...");
+    
     if (sphereVAO) glDeleteVertexArrays(1, &sphereVAO);
     if (sphereVBO) glDeleteBuffers(1, &sphereVBO);
     if (sphereEBO) glDeleteBuffers(1, &sphereEBO);
     if (previewFBO) glDeleteFramebuffers(1, &previewFBO);
     if (previewTexture) glDeleteTextures(1, &previewTexture);
     
-    // Shutdown window and platform
+    // Shutdown window and input
+    inputDevice.reset();
     window.reset();
-    if (platform) {
-        platform->shutdown();
-        platform.reset();
-    }
+    cachedPlatform.reset();
+    
+    // Note: Platform and RHI subsystems are managed by their respective modules
+    // We don't shutdown them here as they may be shared across multiple systems
+    
+    LOG("Renderer: Shutdown complete");
 }
 
 void Renderer::beginFrame() {
@@ -125,7 +131,7 @@ void Renderer::beginFrame() {
 void Renderer::endFrame() {
     if (window) {
         window->swapBuffers();
-        platform->pollEvents();
+        Platform::PlatformSubsystem::Get().PollEvents();
     }
 }
 
@@ -143,7 +149,18 @@ void Renderer::renderMaterialPreview(std::shared_ptr<Material> material) {
                                            (float)width / (float)height, 
                                            0.1f, 100.0f);
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, (float)platform->getTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+    
+    // Use cached platform pointer for efficient per-frame time access
+    if (cachedPlatform) {
+        model = glm::rotate(model, (float)cachedPlatform->getTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+    } else {
+        // This shouldn't happen in normal operation - cachedPlatform is set during initialization
+        static bool warned = false;
+        if (!warned) {
+            std::cerr << "Warning: Renderer::renderMaterialPreview - cachedPlatform is null, animation disabled" << std::endl;
+            warned = true;
+        }
+    }
     
     auto shader = material->getShader();
     // Use typed helpers to upload per-frame matrices and light/camera data
@@ -189,12 +206,18 @@ Platform::WindowHandle Renderer::getWindowHandle() const {
 }
 
 void Renderer::getCursorPos(double& x, double& y) const {
-    if (window) window->getCursorPos(x, y);
-    else { x = 0; y = 0; }
+    if (inputDevice) {
+        auto pos = inputDevice->getCursorPosition();
+        x = pos.x;
+        y = pos.y;
+    } else {
+        x = 0.0;
+        y = 0.0;
+    }
 }
 
 bool Renderer::getMouseButton(int button) const {
-    return window ? window->getMouseButton(button) : false;
+    return inputDevice ? inputDevice->isMouseButtonPressed(static_cast<Input::MouseButton>(button)) : false;
 }
 
 void Renderer::setPreviewMaterial(std::shared_ptr<Material> m) {
