@@ -153,6 +153,13 @@ void Renderer::renderMaterialPreview(std::shared_ptr<Material> material) {
     // Use cached platform pointer for efficient per-frame time access
     if (cachedPlatform) {
         model = glm::rotate(model, (float)cachedPlatform->getTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+    } else {
+        // This shouldn't happen in normal operation - cachedPlatform is set during initialization
+        static bool warned = false;
+        if (!warned) {
+            std::cerr << "Warning: Renderer::renderMaterialPreview - cachedPlatform is null, animation disabled" << std::endl;
+            warned = true;
+        }
     }
     
     auto shader = material->getShader();
