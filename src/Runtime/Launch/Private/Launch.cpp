@@ -131,13 +131,13 @@ bool FMainLoop::Init()
         defaultMaterial->setFloat("metallic", 0.5f);
         defaultMaterial->setFloat("roughness", 0.5f);
 
-        // // Initialize material editor
-        // auto& editorMod = FModuleManager::Get().GetModuleChecked<FEditorModule>("Editor");
-        // editor = editorMod.CreateEditor(renderer.get());
-        // if (!editor) {
-        //     std::cerr << "Failed to initialize material editor" << std::endl;
-        //     return false;
-        // }
+        // Initialize material editor
+        auto& editorMod = FModuleManager::Get().GetModuleChecked<FEditorModule>("Editor");
+        editor = editorMod.CreateEditor(renderer.get());
+        if (!editor) {
+            std::cerr << "Failed to initialize material editor" << std::endl;
+            return false;
+        }
 
     } catch (const std::exception& e) {
         std::cerr << "Exception in Init(): " << e.what() << std::endl;
@@ -183,7 +183,7 @@ void FMainLoop::Tick()
         if (selected) renderer->renderMaterialPreview(selected);
 
         // UI
-        // if (editor) editor->render();
+        if (editor) editor->render();
 
         renderer->endFrame();
 
@@ -217,10 +217,10 @@ void FMainLoop::Exit()
     LOG("FMainLoop: Exiting");
     
     // reverse-order cleanup
-    // if (editor) {
-    //     editor->shutdown();
-    //     editor.reset();
-    // }
+    if (editor) {
+        editor->shutdown();
+        editor.reset();
+    }
     if (renderer) {
         renderer->shutdown();
         renderer.reset();
