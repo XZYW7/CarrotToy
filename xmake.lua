@@ -10,7 +10,7 @@ end
 add_rules("mode.debug", "mode.release")
 
 -- Force GLFW to be shared (DLL) to ensure state is shared across modules
-add_requires("glfw", {configs = {shared = true}})
+add_requires("glfw")
 
 add_requires("glm", "stb", "directxshadercompiler", 
     {configs = {
@@ -20,6 +20,7 @@ add_requires("glad", {
     configs = {
         version = "4.6", 
         extensions = "GL_ARB_gl_spirv",
+        shared = true
     }
 })
 add_requires("imgui", { 
@@ -29,6 +30,7 @@ add_requires("imgui", {
         freetype = true,   -- 启用FreeType字体支持
         docking = true,     -- 启用 docking 特性
         viewports = true,   -- 启用多视口支持
+        shared = true
     }
 })
 

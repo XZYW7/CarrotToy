@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-
+#include "Platform.h"
 namespace CarrotToy {
 
 // Forward declarations
@@ -53,6 +53,6 @@ public:
  * Factory function to create ImGui context
  * Currently creates an OpenGL3+GLFW backend
  */
-std::shared_ptr<ImGuiContext> createImGuiContext();
+PLATFORM_API std::shared_ptr<ImGuiContext> createImGuiContext();
 
 } // namespace CarrotToy

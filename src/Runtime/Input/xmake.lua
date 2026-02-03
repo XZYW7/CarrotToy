@@ -10,12 +10,14 @@ end
 set_basename("Input")
 
 target("Input")
-    -- Input depends on Platform for window access
-    add_deps("Core")
+    add_deps("Core", "Platform")
     
     add_files("Private/**.cpp")
     add_headerfiles("Public/**.h")
     add_includedirs("Public", {public = true})
+    -- Explicitly add dependency include paths to fix C1083 in some build environments
+    add_includedirs("../Platform/Public")
+    add_includedirs("../Core/Public")
     
     -- Add defines for shared library build
     if kind == "shared" then

@@ -13,7 +13,7 @@ target("Platform")
     -- Platform encapsulates GLFW/GLAD/ImGui - abstractions are public, not the libraries
     -- GLFW, GLAD, and ImGui are internal dependencies
     add_packages("glfw", "glad", "imgui")
-    
+    add_deps("Core")
     add_files("Private/**.cpp")
     add_headerfiles("Public/**.h")
     add_includedirs("Public", {public = true})
