@@ -52,6 +52,7 @@ public:
     
 private:
     std::shared_ptr<Platform::IPlatformWindow> window;
+    std::shared_ptr<Platform::IPlatform> cachedPlatform;  // Cached for getTime() calls
     std::shared_ptr<Input::IInputDevice> inputDevice;
     int width, height;
     RenderMode renderMode;

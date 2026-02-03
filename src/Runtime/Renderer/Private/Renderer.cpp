@@ -14,7 +14,7 @@
 namespace CarrotToy {
 
 Renderer::Renderer() 
-    : window(nullptr), inputDevice(nullptr), 
+    : window(nullptr), cachedPlatform(nullptr), inputDevice(nullptr), 
       width(800), height(600), renderMode(RenderMode::Rasterization),
       sphereVAO(0), sphereVBO(0), sphereEBO(0),
       previewFBO(0), previewTexture(0) {
@@ -90,6 +90,9 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     
     LOG("Renderer: RHI device initialized and registered globally.");
     
+    // Cache platform pointer for efficient per-frame access (e.g., getTime())
+    cachedPlatform = platformSubsystem.GetPlatform();
+    
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
     
@@ -112,6 +115,7 @@ void Renderer::shutdown() {
     // Shutdown window and input
     inputDevice.reset();
     window.reset();
+    cachedPlatform.reset();
     
     // Note: Platform and RHI subsystems are managed by their respective modules
     // We don't shutdown them here as they may be shared across multiple systems
@@ -146,10 +150,16 @@ void Renderer::renderMaterialPreview(std::shared_ptr<Material> material) {
                                            0.1f, 100.0f);
     glm::mat4 model = glm::mat4(1.0f);
     
-    // Get time from Platform subsystem
-    auto platform = Platform::PlatformSubsystem::Get().GetPlatform();
-    if (platform) {
-        model = glm::rotate(model, (float)platform->getTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+    // Use cached platform pointer for efficient per-frame time access
+    if (cachedPlatform) {
+        model = glm::rotate(model, (float)cachedPlatform->getTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+    } else {
+        // This shouldn't happen in normal operation - cachedPlatform is set during initialization
+        static bool warned = false;
+        if (!warned) {
+            std::cerr << "Warning: Renderer::renderMaterialPreview - cachedPlatform is null, animation disabled" << std::endl;
+            warned = true;
+        }
     }
     
     auto shader = material->getShader();

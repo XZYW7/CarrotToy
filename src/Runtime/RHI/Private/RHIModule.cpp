@@ -81,7 +81,9 @@ public:
 	{
 		LOG("RHIModule: Startup - RHI subsystem ready (device creation deferred)");
 		// RHI device initialization happens via RHISubsystem::Initialize()
-		// which should be called after Platform is initialized with a valid OpenGL context
+		// which should be called after Platform is initialized with a valid OpenGL context.
+		// If called before Platform initialization, RHISubsystem::Initialize() will fail
+		// because it requires a proc address loader from the Platform module.
 	}
 
 	virtual void ShutdownModule() override

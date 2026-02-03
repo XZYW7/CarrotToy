@@ -42,7 +42,8 @@ bool PlatformSubsystem::Initialize() {
     }
     
     // Note: Platform's initialize() is skipped because platformContext already initialized GLFW
-    // The platform will detect this and reuse the existing context
+    // GLFWPlatform::initialize() in Platform.cpp detects this by calling glfwGetPrimaryMonitor()
+    // and reuses the existing GLFW context instead of calling glfwInit() again
     
     initialized = true;
     LOG("PlatformSubsystem: Initialized successfully");
