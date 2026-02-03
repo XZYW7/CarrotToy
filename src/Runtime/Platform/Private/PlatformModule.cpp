@@ -41,9 +41,12 @@ bool PlatformSubsystem::Initialize() {
         return false;
     }
     
-    // Note: Platform's initialize() is skipped because platformContext already initialized GLFW
-    // GLFWPlatform::initialize() in Platform.cpp detects this by calling glfwGetPrimaryMonitor()
-    // and reuses the existing GLFW context instead of calling glfwInit() again
+    // Initialize platform wrapper
+    // This will detect that GLFW is already initialized by PlatformContext and just set the initialized flag
+    if (!platform->initialize()) {
+        std::cerr << "PlatformSubsystem: Failed to initialize platform wrapper" << std::endl;
+        return false;
+    }
     
     initialized = true;
     LOG("PlatformSubsystem: Initialized successfully");
