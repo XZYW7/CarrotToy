@@ -22,12 +22,20 @@ void demonstrateRHIUsage() {
     }
     
     // 2. Initialize the device
-    // Note: In a real app, you would pass a loader function here if crossing DLL boundaries
-    // For this example within RHI module, we use default (nullptr) which uses local glfwGetProcAddress
-    if (!rhiDevice->initialize(nullptr)) {
-        std::cerr << "Failed to initialize RHI device" << std::endl;
-        return;
-    }
+    // Note: A proc address loader MUST be provided to avoid GLFW dependency in RHI
+    // Get the loader from your Platform layer window's getProcAddress method
+    // For this example, we'll need a platform window context first
+    // Example: auto loader = [window](const char* name) { return window->getProcAddress(name); };
+    
+    // This example cannot run standalone without a valid OpenGL context and loader
+    std::cerr << "Note: This example requires a Platform window context and loader" << std::endl;
+    std::cerr << "      RHI no longer has fallback GLFW dependencies" << std::endl;
+    
+    // Commented out as it requires proper context:
+    // if (!rhiDevice->initialize(loader)) {
+    //     std::cerr << "Failed to initialize RHI device" << std::endl;
+    //     return;
+    // }
     
     std::cout << "RHI Device initialized successfully" << std::endl;
     

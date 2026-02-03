@@ -69,38 +69,34 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     });
     
     // Initialize GLAD using platform's proc address loader
-    // Store raw pointer temporarily for GLAD initialization (thread-local for safety)
-    thread_local Platform::IPlatformWindow* t_gladWindow = nullptr;
-    t_gladWindow = window.get();
-    
-    auto gladLoader = [](const char* name) -> void* {
-        return t_gladWindow ? t_gladWindow->getProcAddress(name) : nullptr;
+    // Create a simple lambda that wraps the window's getProcAddress
+    auto gladLoader = [this](const char* name) -> void* {
+        return window ? window->getProcAddress(name) : nullptr;
     };
     
     // Correct Initialization Flow: Window -> Context -> GLAD -> RHI Device
     LOG("Renderer: Initializing GLAD...");
-    // Force conversion to function pointer for GLAD
     if (!gladLoadGLLoader((GLADloadproc)+gladLoader)) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
-        t_gladWindow = nullptr;
         return false;
     }
     
     LOG("Renderer: Creating and initializing global RHI device (OpenGL backend)...");
     auto rhiDevice = CarrotToy::RHI::createRHIDevice(CarrotToy::RHI::GraphicsAPI::OpenGL);
-    if (rhiDevice) {
-        // Pass the loader to RHI so it can initialize its local GLAD instance
-        // even if GLFW state is separate (DLL boundaries)
-        // Keep t_gladWindow valid during this call
-        if (!rhiDevice->initialize(+gladLoader)) {
-            std::cerr << "Failed to initialize RHI device" << std::endl;
-            t_gladWindow = nullptr;
-            return false;
-        }
-        CarrotToy::RHI::setGlobalDevice(rhiDevice);
-        LOG("Renderer: RHI device initialized and registered globally.");
+    if (!rhiDevice) {
+        std::cerr << "Failed to create RHI device" << std::endl;
+        return false;
     }
-    t_gladWindow = nullptr;  // Clear after all initializations
+    
+    // Pass the loader to RHI so it can initialize its local GLAD instance
+    // This is required for cross-DLL scenarios (RHI needs its own function pointers)
+    if (!rhiDevice->initialize(+gladLoader)) {
+        std::cerr << "Failed to initialize RHI device" << std::endl;
+        return false;
+    }
+    
+    CarrotToy::RHI::setGlobalDevice(rhiDevice);
+    LOG("Renderer: RHI device initialized and registered globally.");
     
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
