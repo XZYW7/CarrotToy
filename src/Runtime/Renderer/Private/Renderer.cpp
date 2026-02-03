@@ -7,10 +7,12 @@
 #include <iostream>
 #include <cmath>
 #include "CoreUtils.h"
+#include "Input/InputDevice.h"
+
 namespace CarrotToy {
 
 Renderer::Renderer() 
-    : platform(nullptr), window(nullptr), width(800), height(600), 
+    : platform(nullptr), window(nullptr), inputDevice(nullptr), width(800), height(600), 
       renderMode(RenderMode::Rasterization),
       sphereVAO(0), sphereVBO(0), sphereEBO(0),
       previewFBO(0), previewTexture(0) {
@@ -48,6 +50,13 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     window = platform->createWindow(windowDesc);
     if (!window) {
         std::cerr << "Failed to create window" << std::endl;
+        return false;
+    }
+    
+    // Create input device for the window
+    inputDevice = Input::createInputDevice(window);
+    if (!inputDevice) {
+        std::cerr << "Failed to create input device" << std::endl;
         return false;
     }
     
@@ -189,12 +198,18 @@ Platform::WindowHandle Renderer::getWindowHandle() const {
 }
 
 void Renderer::getCursorPos(double& x, double& y) const {
-    if (window) window->getCursorPos(x, y);
-    else { x = 0; y = 0; }
+    if (inputDevice) {
+        auto pos = inputDevice->getCursorPosition();
+        x = pos.x;
+        y = pos.y;
+    } else {
+        x = 0.0;
+        y = 0.0;
+    }
 }
 
 bool Renderer::getMouseButton(int button) const {
-    return window ? window->getMouseButton(button) : false;
+    return inputDevice ? inputDevice->isMouseButtonPressed(static_cast<Input::MouseButton>(button)) : false;
 }
 
 void Renderer::setPreviewMaterial(std::shared_ptr<Material> m) {

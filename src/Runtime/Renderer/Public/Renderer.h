@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include "Platform/Platform.h"
+#include "Input/InputDevice.h"
 #include "RendererAPI.h"
 
 namespace CarrotToy {
@@ -36,11 +37,12 @@ public:
     bool shouldClose();
     Platform::WindowHandle getWindowHandle() const;
     std::shared_ptr<Platform::IPlatformWindow> getWindow() const { return window; }
+    std::shared_ptr<Input::IInputDevice> getInputDevice() const { return inputDevice; }
     
     void setRenderMode(RenderMode mode) { renderMode = mode; }
     RenderMode getRenderMode() const { return renderMode; }
 
-    // Input proxies
+    // Input proxies (deprecated - use getInputDevice() instead)
     void getCursorPos(double& x, double& y) const;
     bool getMouseButton(int button) const;
     
@@ -51,6 +53,7 @@ public:
 private:
     std::shared_ptr<Platform::IPlatform> platform;
     std::shared_ptr<Platform::IPlatformWindow> window;
+    std::shared_ptr<Input::IInputDevice> inputDevice;
     int width, height;
     RenderMode renderMode;
     
