@@ -4,6 +4,10 @@
 
 CarrotToy has been reorganized into a clean, modular architecture with well-defined module boundaries and dependencies. This document describes the new structure and the responsibilities of each module.
 
+## Recent Improvements
+
+**RHI GLFW Dependency Removal** (Latest): The RHI module no longer has any GLFW dependencies. ProcAddressLoader is now required for initialization, resulting in cleaner code and better abstraction. See [RHI_GLFW_REMOVAL.md](RHI_GLFW_REMOVAL.md) for details.
+
 ## Module Structure
 
 ```
@@ -120,7 +124,7 @@ bool leftPressed = inputDevice->isMouseButtonPressed(Input::MouseButton::Left);
 ### RHI Module
 **Location**: `src/Runtime/RHI/`
 **Purpose**: Graphics API abstraction layer
-**Dependencies**: Core module (for basic types)
+**Dependencies**: Core module (for basic types only - NO GLFW)
 **Exports**:
 - `IRHIDevice`: Graphics device interface
 - `IRHIBuffer`, `IRHIShader`, etc.: Resource interfaces
@@ -131,11 +135,17 @@ bool leftPressed = inputDevice->isMouseButtonPressed(Input::MouseButton::Left);
 - Resource management (buffers, shaders, textures, etc.)
 - Rendering state management
 - Platform-independent graphics interface
+- **Zero GLFW dependency** - requires ProcAddressLoader for initialization
 
 **API Example**:
 ```cpp
+// Loader is REQUIRED for OpenGL backend
+auto loader = [window](const char* name) { 
+    return window->getProcAddress(name); 
+};
+
 auto device = RHI::createRHIDevice(RHI::GraphicsAPI::OpenGL);
-device->initialize();
+device->initialize(+loader);  // Loader is mandatory
 auto buffer = device->createBuffer(bufferDesc);
 auto shader = device->createShader(shaderDesc);
 ```
