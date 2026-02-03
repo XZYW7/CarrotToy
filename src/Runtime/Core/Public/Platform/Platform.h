@@ -4,7 +4,7 @@
 #include <memory>
 #include <functional>
 #include <vector>
-
+#include "CoreUtils.h"
 namespace CarrotToy {
 namespace Platform {
 
@@ -64,6 +64,10 @@ public:
     
     // Native handle access (for RHI integration)
     virtual WindowHandle getNativeHandle() const = 0;
+
+    // Input polling (Manual query needed for cross-module boundaries)
+    virtual void getCursorPos(double& x, double& y) const = 0;
+    virtual bool getMouseButton(int button) const = 0;
     
     // Callbacks
     using ResizeCallback = std::function<void(uint32_t width, uint32_t height)>;
@@ -71,7 +75,7 @@ public:
 };
 
 // Factory function to create platform instance
-std::shared_ptr<IPlatform> createPlatform();
+CORE_API std::shared_ptr<IPlatform> createPlatform();
 
 // Get current platform type (compile-time detection)
 PlatformType getCurrentPlatformType();

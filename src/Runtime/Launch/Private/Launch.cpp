@@ -7,6 +7,9 @@
 #include "MaterialEditor.h"
 #include <iostream>
 #include "Modules/Module.h"
+#include "Modules/EngineModules.h"
+#include "RendererModule.h"
+#include "RHI/RHIModuleInit.h"
 using namespace CarrotToy;
 
 
@@ -50,6 +53,12 @@ void FMainLoop::LoadPreInitModules()
 {
     LOG("FMainLoop: Loading PreInit Modules");
     
+    // Initialize dynamic module DLLs by calling their exported init functions
+    // This ensures modules are registered with FModuleManager before we try to load them
+    InitializeModuleCoreEngine();
+    InitializeModuleRHI();
+    InitializeModuleRenderer();
+    InitializeModuleEditor();
     // Load application module first (if registered)
     // Get all registered application modules and load them
     const auto& appModules = FModuleManager::Get().GetModulesByType(EModuleType::Application);
@@ -58,11 +67,14 @@ void FMainLoop::LoadPreInitModules()
         FModuleManager::Get().LoadModule(modName);
     }
     
-    // Try to load engine modules (optional - not all apps have these)
+    // Load core engine modules in order
+    // These modules should be loaded before any game or plugin modules
     FModuleManager::Get().LoadModule("CoreEngine");
+    FModuleManager::Get().LoadModule("Launch");
     FModuleManager::Get().LoadModule("RHI");
-    // Note: Editor is not a module, it's a tool library linked directly to applications that need it
-    
+    FModuleManager::Get().LoadModule("Renderer");
+    FModuleManager::Get().LoadModule("Editor");
+
     // Example: Discover and list available plugins
     // In a real project, you would specify your plugins directory
     // FModuleManager::Get().DiscoverPlugins(Path::ProjectDir() + "/Plugins");
@@ -114,8 +126,9 @@ bool FMainLoop::Init()
         defaultMaterial->setFloat("roughness", 0.5f);
 
         // Initialize material editor
-        editor = std::make_unique<CarrotToy::MaterialEditor>();
-        if (!editor->initialize(renderer.get())) {
+        auto& editorMod = FModuleManager::Get().GetModuleChecked<FEditorModule>("Editor");
+        editor = editorMod.CreateEditor(renderer.get());
+        if (!editor) {
             std::cerr << "Failed to initialize material editor" << std::endl;
             return false;
         }

@@ -3,14 +3,16 @@
 #include <string>
 #include <functional>
 #include <memory>
+#include "EditorAPI.h"
 namespace CarrotToy {
 
 class Material;
 class Renderer;
 
 // Material Editor UI class - provides ImGui interface for material editing
-class MaterialEditor {
+class EDITOR_API MaterialEditor{
 public:
+
     MaterialEditor();
     ~MaterialEditor();
     

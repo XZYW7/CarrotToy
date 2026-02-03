@@ -68,23 +68,31 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
         return t_gladWindow ? t_gladWindow->getProcAddress(name) : nullptr;
     };
     
-    if (!gladLoadGLLoader((GLADloadproc)gladLoader)) {
+    // Correct Initialization Flow: Window -> Context -> GLAD -> RHI Device
+    LOG("Renderer: Initializing GLAD...");
+    // Force conversion to function pointer for GLAD
+    if (!gladLoadGLLoader((GLADloadproc)+gladLoader)) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         t_gladWindow = nullptr;
         return false;
     }
-    t_gladWindow = nullptr;  // Clear after successful initialization
     
-    // Create and register a global RHI device (OpenGL backend)
+    LOG("Renderer: Creating and initializing global RHI device (OpenGL backend)...");
     auto rhiDevice = CarrotToy::RHI::createRHIDevice(CarrotToy::RHI::GraphicsAPI::OpenGL);
     if (rhiDevice) {
-        if (!rhiDevice->initialize()) {
+        // Pass the loader to RHI so it can initialize its local GLAD instance
+        // even if GLFW state is separate (DLL boundaries)
+        // Keep t_gladWindow valid during this call
+        if (!rhiDevice->initialize(+gladLoader)) {
             std::cerr << "Failed to initialize RHI device" << std::endl;
+            t_gladWindow = nullptr;
             return false;
         }
         CarrotToy::RHI::setGlobalDevice(rhiDevice);
+        LOG("Renderer: RHI device initialized and registered globally.");
     }
-
+    t_gladWindow = nullptr;  // Clear after all initializations
+    
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
     
@@ -179,6 +187,16 @@ bool Renderer::shouldClose() {
 Platform::WindowHandle Renderer::getWindowHandle() const {
     return window ? window->getNativeHandle() : nullptr;
 }
+
+void Renderer::getCursorPos(double& x, double& y) const {
+    if (window) window->getCursorPos(x, y);
+    else { x = 0; y = 0; }
+}
+
+bool Renderer::getMouseButton(int button) const {
+    return window ? window->getMouseButton(button) : false;
+}
+
 void Renderer::setPreviewMaterial(std::shared_ptr<Material> m) {
     previewMaterial = m;
 }

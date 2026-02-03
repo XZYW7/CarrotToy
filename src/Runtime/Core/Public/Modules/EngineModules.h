@@ -1,5 +1,5 @@
 #pragma once
-#include "Modules/ModuleInterface.h"
+#include "Modules/Module.h"
 
 /**
  * Core Engine Module
@@ -18,16 +18,7 @@ public:
 };
 
 /**
- * RHI (Rendering Hardware Interface) Module
- * Handles graphics API abstraction and device management
+ * Initialize the Core module and register it with ModuleManager.
+ * Must be called explicitly to ensure proper DLL loading and module registration.
  */
-class FRHIModule : public IModuleInterface
-{
-public:
-	virtual ~FRHIModule() override = default;
-
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
-	
-	virtual bool IsGameModule() const override { return false; }
-};
+extern "C" CORE_API void InitializeModuleCoreEngine();

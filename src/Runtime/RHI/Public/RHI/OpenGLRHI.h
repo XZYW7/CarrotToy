@@ -185,7 +185,7 @@ public:
     OpenGLRHIDevice();
     ~OpenGLRHIDevice() override;
     
-    bool initialize() override;
+    bool initialize(ProcAddressLoader loader = nullptr) override;
     void shutdown() override;
     
     GraphicsAPI getGraphicsAPI() const override { return GraphicsAPI::OpenGL; }

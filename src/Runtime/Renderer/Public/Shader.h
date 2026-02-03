@@ -7,7 +7,7 @@
 #include <map>
 #include <memory>
 #include "RHI/RHI.h"
-
+#include "RendererAPI.h"
 namespace CarrotToy {
 // --- 通用 UBO 缓存结构 ---
 // TODO：Support RHI abstraction layer
@@ -24,7 +24,7 @@ struct ProgramUBOCache {
 static std::map<GLuint, ProgramUBOCache> g_ProgramUBOs;
 
 // Shader class - manages shader compilation and hot-reloading
-class Shader {
+class RENDERER_API Shader {
 public:
     Shader(const std::string& vertexPath, const std::string& fragmentPath);
     ~Shader();

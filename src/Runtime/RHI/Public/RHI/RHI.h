@@ -13,8 +13,10 @@ class IRHIDevice {
 public:
     virtual ~IRHIDevice() = default;
     
+    using ProcAddressLoader = void* (*)(const char* name);
+
     // Device initialization and shutdown
-    virtual bool initialize() = 0;
+    virtual bool initialize(ProcAddressLoader loader = nullptr) = 0;
     virtual void shutdown() = 0;
     
     // Get graphics API type
@@ -55,11 +57,11 @@ public:
 };
 
 // Factory function to create RHI device based on API type
-std::shared_ptr<IRHIDevice> createRHIDevice(GraphicsAPI api);
+RHI_API std::shared_ptr<IRHIDevice> createRHIDevice(GraphicsAPI api);
 
 // Global device accessors (convenience for high-level systems)
-void setGlobalDevice(std::shared_ptr<IRHIDevice> device);
-std::shared_ptr<IRHIDevice> getGlobalDevice();
+RHI_API void setGlobalDevice(std::shared_ptr<IRHIDevice> device);
+RHI_API std::shared_ptr<IRHIDevice> getGlobalDevice();
 
 } // namespace RHI
 } // namespace CarrotToy

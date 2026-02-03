@@ -25,39 +25,50 @@ struct FModuleInfo
 
 class FModuleManager {
 public:
-    static FModuleManager& Get();
+    static CORE_API FModuleManager& Get();
+    
+    template<typename ModuleType>
+    static ModuleType& GetModuleChecked(const FName& name)
+    {
+        IModuleInterface* module = Get().GetModule(name);
+        if (!module) {
+            // Handle error: module not found
+            throw std::runtime_error("Module not found: " + std::string(name));
+        }
+        return static_cast<ModuleType&>(*module);
+    }
 
     // Register module instance (for static-linked modules or after dynamic factory)
-    void RegisterModule(const FName& name, FUniquePtr<IModuleInterface> module, 
+    CORE_API void RegisterModule(const FName& name, FUniquePtr<IModuleInterface> module, 
                        EModuleType type = EModuleType::Engine);
     
     // Get module by name
-    IModuleInterface* GetModule(const FName& name);
+    CORE_API IModuleInterface* GetModule(const FName& name);
     
     // Check if module is loaded
-    bool IsModuleLoaded(const FName& name) const;
+    CORE_API bool IsModuleLoaded(const FName& name) const;
     
     // Load module by name (searches in known module paths)
-    bool LoadModule(const FName& name);
+    CORE_API bool LoadModule(const FName& name);
     
     // Unload a specific module
-    void UnloadModule(const FName& name);
+    CORE_API void UnloadModule(const FName& name);
     
     // Shutdown all modules
-    void ShutdownAll();
+    CORE_API void ShutdownAll();
 
     // Dynamic load from path (uses platform layer)
     // FModuleManager::Get().LoadModuleDynamic("path/to/GameModule.dll")
-    bool LoadModuleDynamic(const FString& path);
+    CORE_API bool LoadModuleDynamic(const FString& path);
     
     // Plugin management
-    void DiscoverPlugins(const FString& pluginDirectory);
-    bool LoadPlugin(const FName& pluginName);
-    void UnloadPlugin(const FName& pluginName);
-    TArray<FPluginDescriptor> GetAvailablePlugins() const;
+    CORE_API void DiscoverPlugins(const FString& pluginDirectory);
+    CORE_API bool LoadPlugin(const FName& pluginName);
+    CORE_API void UnloadPlugin(const FName& pluginName);
+    CORE_API TArray<FPluginDescriptor> GetAvailablePlugins() const;
     
     // Get all loaded modules by type
-    TArray<FName> GetModulesByType(EModuleType type) const;
+    CORE_API TArray<FName> GetModulesByType(EModuleType type) const;
     
 private:
     FModuleManager() = default;
@@ -89,20 +100,48 @@ public:
     }
 };
 
-// Implement a module (default to Engine type)
+// Implement a module with explicit API export macro (for dynamic/shared modules)
+// API_MACRO should be the module's export macro (e.g., CORE_API, RHI_API, RENDERER_API)
+// Creates an exported InitializeModule function that must be called explicitly
+#define IMPLEMENT_MODULE_WITH_API( ModuleImplClass, ModuleName, API_MACRO ) \
+    namespace { \
+        static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
+    } \
+    extern "C" API_MACRO void InitializeModule##ModuleName() \
+    { \
+        static bool bInitialized = false; \
+        if (!bInitialized) { \
+            FModuleManager::Get().RegisterModule(TEXT(#ModuleName), \
+                FUniquePtr<IModuleInterface>(CreateModule##ModuleName()), \
+                EModuleType::Engine); \
+            bInitialized = true; \
+        } \
+    }
+
+// Implement a module (uses CORE_API by default for backward compatibility)
+// For dynamic/shared modules, this creates an exported init function
 #define IMPLEMENT_MODULE( ModuleImplClass, ModuleName ) \
-    /** Global registrant object for this module when linked statically */ \
-    static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
-    static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Engine );
+    IMPLEMENT_MODULE_WITH_API( ModuleImplClass, ModuleName, CORE_API )
+
+// Implement a module with static registration (for statically linked modules)
+// Uses global constructor for automatic registration before main()
+#define IMPLEMENT_MODULE_STATIC( ModuleImplClass, ModuleName ) \
+    namespace { \
+        static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
+        static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Engine ); \
+    }
 
 
 // Implement an application module (with application entry point)
+// Application modules are in the executable, so they use static registration
 #define IMPLEMENT_APPLICATION_MODULE( ModuleImplClass, ModuleName, GameName ) \
     /** For monolithic builds, we must statically define the game's name string */ \
     TCHAR GInternalProjectName[64] = TEXT( GameName ); \
-    /** Global registrant object for this application module */ \
-    static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
-    static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Application ); \
+    /** Global registrant for application module (uses static registration) */ \
+    namespace { \
+        static IModuleInterface* CreateModule##ModuleName() { return new ModuleImplClass(); } \
+        static FStaticallyLinkedModuleRegistrant< ModuleImplClass > ModuleRegistrant##ModuleName( TEXT(#ModuleName), EModuleType::Application ); \
+    } \
     FMainLoop GEngineLoop;
 
 // Legacy macro for backward compatibility

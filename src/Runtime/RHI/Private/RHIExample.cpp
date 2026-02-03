@@ -22,7 +22,9 @@ void demonstrateRHIUsage() {
     }
     
     // 2. Initialize the device
-    if (!rhiDevice->initialize()) {
+    // Note: In a real app, you would pass a loader function here if crossing DLL boundaries
+    // For this example within RHI module, we use default (nullptr) which uses local glfwGetProcAddress
+    if (!rhiDevice->initialize(nullptr)) {
         std::cerr << "Failed to initialize RHI device" << std::endl;
         return;
     }

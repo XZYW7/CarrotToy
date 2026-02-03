@@ -97,7 +97,7 @@ MaterialEditor::~MaterialEditor() {
 bool MaterialEditor::initialize(Renderer* r) {
     initialized = true;
     renderer = r;
-    
+
     // TODO : Distangle the Imgui Logic from editor
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -134,8 +134,35 @@ void MaterialEditor::render() {
     // Start ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
     
+    // Fix: Force update DisplaySize and Scale BEFORE NewFrame if GLFW fails to provide it
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.DisplaySize.x <= 0 || io.DisplaySize.y <= 0) {
+        if (renderer && renderer->getWindow()) {
+            uint32_t w, h;
+            renderer->getWindow()->getSize(w, h);
+            uint32_t fw, fh;
+            renderer->getWindow()->getFramebufferSize(fw, fh);
+
+            io.DisplaySize = ImVec2((float)w, (float)h);
+            if (io.DisplaySize.x > 0 && io.DisplaySize.y > 0) {
+                 io.DisplayFramebufferScale = ImVec2((float)fw / w, (float)fh / h);
+            }
+            
+            // Fix: Manually inject input events since Callbacks via ImGui_ImplGlfw won't fire across DLL boundary
+            // if strict static linking of GLFW is in play.
+            double mx, my;
+            renderer->getCursorPos(mx, my);
+            io.MousePos = ImVec2((float)mx, (float)my);
+            
+            io.MouseDown[0] = renderer->getMouseButton(0); // Left
+            io.MouseDown[1] = renderer->getMouseButton(1); // Right
+            io.MouseDown[2] = renderer->getMouseButton(2); // Middle
+        }
+    }
+
+    ImGui::NewFrame();
+ 
     showMaterialList();
     showMaterialProperties();
     showShaderEditor();

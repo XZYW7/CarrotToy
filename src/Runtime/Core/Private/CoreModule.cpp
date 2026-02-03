@@ -3,6 +3,3 @@
 
 // Register Core Engine Module
 IMPLEMENT_MODULE(FCoreEngineModule, CoreEngine)
-
-// Register RHI Module as a standalone module
-IMPLEMENT_MODULE(FRHIModule, RHI)
