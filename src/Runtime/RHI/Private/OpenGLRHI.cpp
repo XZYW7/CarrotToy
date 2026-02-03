@@ -208,11 +208,11 @@ bool OpenGLShader::compile() {
         }
 
 #ifdef GL_SHADER_BINARY_FORMAT_SPIR_V
-        GLenum format = GL_SHADER_BINARY_FORMAT_SPIR_V;
+        GLenum binaryFormat = GL_SHADER_BINARY_FORMAT_SPIR_V;
 #elif defined(GL_SHADER_BINARY_FORMAT_SPIR_V_ARB)
-        GLenum format = GL_SHADER_BINARY_FORMAT_SPIR_V_ARB;
+        GLenum binaryFormat = GL_SHADER_BINARY_FORMAT_SPIR_V_ARB;
 #else
-        GLenum format = 0x9551; // Fallback constant
+        GLenum binaryFormat = 0x9551; // Fallback constant
 #endif
 
         if (!glShaderBinary) {
@@ -220,7 +220,7 @@ bool OpenGLShader::compile() {
             return false;
         }
 
-        glShaderBinary(1, &shaderID, format, source.data(), (GLsizei)source.size());
+        glShaderBinary(1, &shaderID, binaryFormat, source.data(), (GLsizei)source.size());
 
         // Specialize the shader with the entry point
 #ifdef GL_ARB_gl_spirv

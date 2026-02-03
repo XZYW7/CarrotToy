@@ -204,11 +204,20 @@ bool Shader::linkProgram() {
     // Cache uniform variable offsets
     auto uniformVars = newProgram->getUniformVariables();
     for (const auto& var : uniformVars) {
-        if (var.offset < 0) continue; // Skip non-block uniforms
+        // Skip uniforms that are not in uniform blocks
+        // (offset < 0 indicates non-block uniform)
+        if (var.offset < 0) continue;
         
+        // Get the UBO ID for this variable's block
+        // Note: blockIndex of 0 with offset >= 0 is valid (first block)
+        // but we need to make sure it actually exists in blockUBOs
         uintptr_t uboID = 0;
         if (blockUBOs.count(var.blockIndex)) {
             uboID = blockUBOs[var.blockIndex];
+        } else {
+            // This shouldn't happen if reflection is working correctly,
+            // but skip this variable if we can't find its block
+            continue;
         }
         
         auto store = [&](const std::string& key) {
