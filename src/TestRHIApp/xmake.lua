@@ -6,10 +6,10 @@ target("TestRHIApp")
     set_kind("binary")
     
     add_files("Private/**.cpp")
-    add_deps("Core", "RHI", "Launch")
+    add_deps("Core", "Platform", "RHI", "Launch")
 
     -- 应用依赖包
-    add_packages("directxshadercompiler")
+    add_packages("glfw", "directxshadercompiler")
 
     -- 应用系统库和链接选项
     if is_plat("windows") then
