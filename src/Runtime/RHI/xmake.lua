@@ -11,7 +11,7 @@ set_basename("RHI")
 
 target("RHI")
     -- collect RHI sources; keep public headers in Public/ for consumers
-    add_packages("glad", "glfw", "glm", {public = true})
+    add_packages("glad", "glm", {public = true})
 
     add_files("Private/**.cpp")
     add_headerfiles("Public/**.h")

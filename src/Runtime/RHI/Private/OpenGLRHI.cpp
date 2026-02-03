@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include "CoreUtils.h"
-#include <GLFW/glfw3.h>
+
 namespace CarrotToy {
 namespace RHI {
 

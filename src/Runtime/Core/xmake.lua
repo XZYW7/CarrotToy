@@ -11,10 +11,13 @@ end
 set_basename("Core")
 target("Core")
     -- collect core sources; keep public headers in Public/ for consumers
-    add_packages("glad","glfw","stb","imgui", "glm", {public = true})
+    add_packages("glad","stb","imgui", "glm", {public = true})
     add_files("Private/**.cpp")
     add_headerfiles("Public/**.h")
     add_includedirs("Public", {public = true})
+    
+    -- Core now depends on Platform module
+    add_deps("Platform")
     
     -- Add defines for shared library build
     if kind == "shared" then

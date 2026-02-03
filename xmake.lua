@@ -113,6 +113,8 @@ rule("utils.compile_shaders")
 rule_end()
 
 includes("src/Runtime/Core")
+includes("src/Runtime/Platform")
+includes("src/Runtime/Input")
 includes("src/Runtime/RHI")
 includes("src/Runtime/Renderer")
 includes("src/Runtime/Launch")
