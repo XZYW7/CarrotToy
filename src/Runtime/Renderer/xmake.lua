@@ -13,7 +13,7 @@ target("Renderer")
     -- Renderer depends on Core, Platform, Input, and RHI
     add_deps("Core", "Platform", "Input", "RHI")
     -- GLAD is only used internally for direct GL calls (should be minimized)
-    add_packages("glad", "glm")
+    add_packages("glad", "glm", {public = true})
     add_files("Private/**.cpp")
     add_headerfiles("Public/**.h")
     add_includedirs("Public", {public = true})

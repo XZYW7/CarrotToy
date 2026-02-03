@@ -17,7 +17,6 @@ Resource managers / Asset registry
 
 Renderer / UI / Input / Editor 等
     */
-
     if(!GEngineLoop.PreInit(argc, argv))
     {
         std::cerr << "PreInit failed\n";
