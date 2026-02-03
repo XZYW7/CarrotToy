@@ -69,15 +69,20 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     });
     
     // Initialize GLAD using platform's proc address loader
-    // Create a simple lambda that wraps the window's getProcAddress
-    auto gladLoader = [this](const char* name) -> void* {
-        return window ? window->getProcAddress(name) : nullptr;
+    // Use thread-local to store window pointer for the loader lambda
+    // This allows a non-capturing lambda that can convert to function pointer
+    thread_local Platform::IPlatformWindow* loaderWindow = nullptr;
+    loaderWindow = window.get();
+    
+    auto gladLoader = [](const char* name) -> void* {
+        return loaderWindow ? loaderWindow->getProcAddress(name) : nullptr;
     };
     
     // Correct Initialization Flow: Window -> Context -> GLAD -> RHI Device
     LOG("Renderer: Initializing GLAD...");
     if (!gladLoadGLLoader((GLADloadproc)+gladLoader)) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
+        loaderWindow = nullptr;
         return false;
     }
     
@@ -85,6 +90,7 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     auto rhiDevice = CarrotToy::RHI::createRHIDevice(CarrotToy::RHI::GraphicsAPI::OpenGL);
     if (!rhiDevice) {
         std::cerr << "Failed to create RHI device" << std::endl;
+        loaderWindow = nullptr;
         return false;
     }
     
@@ -92,11 +98,14 @@ bool Renderer::initialize(int w, int h, const std::string& title) {
     // This is required for cross-DLL scenarios (RHI needs its own function pointers)
     if (!rhiDevice->initialize(+gladLoader)) {
         std::cerr << "Failed to initialize RHI device" << std::endl;
+        loaderWindow = nullptr;
         return false;
     }
     
     CarrotToy::RHI::setGlobalDevice(rhiDevice);
     LOG("Renderer: RHI device initialized and registered globally.");
+    
+    loaderWindow = nullptr;  // Clear after initialization
     
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
