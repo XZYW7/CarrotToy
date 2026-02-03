@@ -4,6 +4,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>
+#include <glad/glad.h>
 #include <iostream>
 
 namespace CarrotToy {
@@ -53,7 +54,23 @@ public:
         }
         
         ImGui_ImplGlfw_InitForOpenGL(glfwWindow, true);
-        ImGui_ImplOpenGL3_Init("#version 460");
+        
+        // Determine GLSL version based on OpenGL version
+        // Query the OpenGL context for its version
+        GLint major = 0, minor = 0;
+        glGetIntegerv(GL_MAJOR_VERSION, &major);
+        glGetIntegerv(GL_MINOR_VERSION, &minor);
+        
+        // Choose appropriate GLSL version string
+        const char* glslVersion = "#version 460"; // Default to 4.6
+        if (major < 4) {
+            glslVersion = "#version 330"; // Fallback to 3.3
+        } else if (major == 4 && minor < 6) {
+            glslVersion = "#version 430"; // Use 4.3 for OpenGL 4.x < 4.6
+        }
+        
+        std::cout << "ImGuiContext: Using GLSL version: " << glslVersion << std::endl;
+        ImGui_ImplOpenGL3_Init(glslVersion);
         
         std::cout << "ImGuiContext: Initialized successfully (OpenGL3 + GLFW backend)" << std::endl;
         initialized_ = true;

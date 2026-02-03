@@ -58,12 +58,15 @@ public:
         // Make the window's context current
         window->makeContextCurrent();
         
-        // Initialize GLAD using the window's proc address loader
-        auto loader = [window](const char* name) -> void* {
-            return window->getProcAddress(name);
+        // Create a proper function that wraps the proc address loading
+        // This avoids lambda capture issues and ensures type safety
+        struct LoaderContext {
+            static void* loadProc(const char* name) {
+                return reinterpret_cast<void*>(glfwGetProcAddress(name));
+            }
         };
         
-        if (!gladLoadGLLoader((GLADloadproc)loader)) {
+        if (!gladLoadGLLoader(LoaderContext::loadProc)) {
             std::cerr << "PlatformContext: Failed to initialize GLAD" << std::endl;
             return false;
         }
@@ -83,10 +86,14 @@ public:
     }
     
     ProcAddressLoader getProcAddressLoader() const override {
-        // Return GLFW's proc address function
-        return [](const char* name) -> void* {
-            return reinterpret_cast<void*>(glfwGetProcAddress(name));
+        // Return GLFW's proc address function directly
+        // This is a static function with no captures, safe for function pointer conversion
+        struct LoaderFunctor {
+            static void* loadProc(const char* name) {
+                return reinterpret_cast<void*>(glfwGetProcAddress(name));
+            }
         };
+        return LoaderFunctor::loadProc;
     }
     
     bool isPlatformInitialized() const override {
