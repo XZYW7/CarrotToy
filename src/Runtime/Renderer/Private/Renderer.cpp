@@ -146,7 +146,7 @@ void Renderer::renderMaterialPreview(std::shared_ptr<Material> material) {
                                            0.1f, 100.0f);
     glm::mat4 model = glm::mat4(1.0f);
     
-    // Get time from Platform subsystem
+    // Get time from Platform for animation (note: this is called per-frame, caching not needed)
     auto platform = Platform::PlatformSubsystem::Get().GetPlatform();
     if (platform) {
         model = glm::rotate(model, (float)platform->getTime(), glm::vec3(0.0f, 1.0f, 0.0f));
