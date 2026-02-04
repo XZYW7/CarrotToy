@@ -19,6 +19,8 @@ RenderBackendSandbox/
 │   ├── RenderBackendSandbox.cpp          # Application entry point
 │   ├── RenderBackendSandboxModule.h      # Module interface
 │   ├── RenderBackendSandboxModule.cpp    # Module implementation
+│   ├── BasicTests.h                      # Basic concrete tests (NEW)
+│   ├── BasicTests.cpp                    # Basic test implementation (NEW)
 │   ├── DX12Sandbox.h                     # DX12 testing interface
 │   ├── DX12Sandbox.cpp                   # DX12 test implementation
 │   ├── VulkanSandbox.h                   # Vulkan testing interface
@@ -27,6 +29,15 @@ RenderBackendSandbox/
 ```
 
 ## Features
+
+### Basic Tests (Concrete Implementations) ✨ NEW
+- **Memory Allocation**: Real buffer allocation and validation (1KB, 1MB buffers)
+- **String Operations**: String concatenation, length, comparison, substring
+- **Math Operations**: Arithmetic, floating point, math functions, min/max
+- **Platform Detection**: OS detection, architecture (32/64-bit), endianness
+- **Buffer Operations**: memset, memcpy with pattern validation
+
+All BasicTests include actual validation logic (not stubs) and run on all platforms.
 
 ### DX12 Sandbox
 - Device initialization testing
@@ -60,11 +71,37 @@ xmake run RenderBackendSandbox
 
 ## Usage
 
-The sandbox automatically runs all tests on startup. You can modify the source files to add your own tests:
+The sandbox automatically runs all tests on startup:
 
-1. Edit `DX12Sandbox.cpp` to add DX12-specific tests
-2. Edit `VulkanSandbox.cpp` to add Vulkan-specific tests
-3. Rebuild and run to see your test results
+### Test Execution Order
+1. **Basic Tests** - Concrete implementations with real validation
+2. **DX12 Tests** - DirectX 12 API tests (stub implementations)
+3. **Vulkan Tests** - Vulkan API tests (stub implementations)
+
+### Expected Output
+
+```
+========================================
+=== Running Basic Concrete Tests ===
+========================================
+BasicTests: Memory Allocation: PASS - Successfully allocated buffers: 1KB and 1MB
+BasicTests: String Operations: PASS - All string operations validated successfully
+BasicTests: Math Operations: PASS - All math operations validated successfully
+BasicTests: Platform Detection: PASS - Detected platform: Linux (64-bit), Little Endian
+BasicTests: Buffer Operations: PASS - All buffer operations validated successfully
+
+Summary: 5 passed, 0 failed
+========================================
+```
+
+### Adding Your Own Tests
+
+You can modify the source files to add your own tests:
+
+1. Edit `BasicTests.cpp` to add more platform-independent tests
+2. Edit `DX12Sandbox.cpp` to add DX12-specific tests
+3. Edit `VulkanSandbox.cpp` to add Vulkan-specific tests
+4. Rebuild and run to see your test results
 
 ## Platform Support
 
@@ -74,7 +111,7 @@ The sandbox automatically runs all tests on startup. You can modify the source f
 
 ## Integration Roadmap
 
-1. **Phase 1 (Current)**: Isolated testing environment with stub implementations
+1. **Phase 1 (Current)**: Isolated testing environment with BasicTests concrete implementation ✅
 2. **Phase 2**: Implement actual DX12 and Vulkan API calls
 3. **Phase 3**: Create abstraction interfaces for common patterns
 4. **Phase 4**: Integrate tested backends into RHI module
@@ -83,6 +120,56 @@ The sandbox automatically runs all tests on startup. You can modify the source f
 ## Adding New Tests
 
 To add a new test:
+
+### For Basic Tests:
+
+1. Add a test method declaration in `BasicTests.h`:
+   ```cpp
+   void TestMyNewFeature();
+   ```
+
+2. Implement the test in `BasicTests.cpp`:
+   ```cpp
+   void BasicTests::TestMyNewFeature()
+   {
+       LOG("BasicTests: Test - My New Feature");
+       
+       bool passed = true;
+       std::string details;
+       
+       try
+       {
+           // Your actual test logic here
+           // Perform real operations and validation
+           int result = 2 + 2;
+           if (result != 4)
+           {
+               passed = false;
+               details = "Math is broken!";
+           }
+           else
+           {
+               details = "Validation successful";
+           }
+       }
+       catch (const std::exception& e)
+       {
+           passed = false;
+           details = std::string("Exception: ") + e.what();
+       }
+       
+       LogTestResult("My New Feature", passed, details);
+   }
+   ```
+
+3. Call the test in `RunTests()`:
+   ```cpp
+   void BasicTests::RunTests()
+   {
+       // ... existing tests ...
+       TestMyNewFeature();
+   }
+   ```
 
 ### For DX12:
 
@@ -116,6 +203,73 @@ To add a new test:
 ### For Vulkan:
 
 Follow the same pattern in `VulkanSandbox.h` and `VulkanSandbox.cpp`.
+
+## BasicTests Implementation Details
+
+The BasicTests class demonstrates real testing with actual validation:
+
+### Test Coverage
+
+| Test Name | What It Tests | Validations |
+|-----------|---------------|-------------|
+| **Memory Allocation** | Buffer allocation and memory operations | Allocates 1KB and 1MB buffers, writes/reads patterns, validates data integrity |
+| **String Operations** | C++ string functionality | Concatenation, length, comparison, substring extraction |
+| **Math Operations** | Arithmetic and math functions | Basic arithmetic, floating point (with tolerance), sqrt, pow, min/max |
+| **Platform Detection** | System information | OS detection (Win/Linux/macOS), architecture (32/64-bit), endianness |
+| **Buffer Operations** | Low-level memory operations | memset (multiple patterns: 0xAA, 0x55, 0x00), memcpy with validation |
+
+### Key Features
+
+- ✅ **Real Validation**: Not stub implementations - actual pass/fail logic
+- ✅ **Exception Handling**: Try/catch blocks for robust error handling
+- ✅ **Cross-Platform**: Works on Windows, Linux, and macOS
+- ✅ **No External Dependencies**: Uses only standard C++ library
+- ✅ **Detailed Logging**: Reports test results with descriptive messages
+- ✅ **Pass/Fail Tracking**: Counts and reports passed/failed tests
+
+### Example: How BasicTests Differ from Stubs
+
+**Stub Implementation (DX12/Vulkan):**
+```cpp
+void DX12Sandbox::TestDeviceInitialization()
+{
+    LOG("DX12Sandbox: Test - Device Initialization");
+    bool passed = true; // Always passes
+    LogTestResult("Device Initialization", passed, "Device created successfully (stub)");
+}
+```
+
+**Concrete Implementation (BasicTests):**
+```cpp
+void BasicTests::TestMemoryAllocation()
+{
+    bool passed = true;
+    try
+    {
+        // Actually allocate memory
+        if (!AllocateTestBuffer(1024)) {
+            passed = false; // Real failure condition
+        }
+        // Actually write to memory
+        for (size_t i = 0; i < TestBufferSize; ++i) {
+            TestBuffer[i] = static_cast<uint8_t>(i % 256);
+        }
+        // Actually validate memory contents
+        for (size_t i = 0; i < TestBufferSize; ++i) {
+            if (TestBuffer[i] != static_cast<uint8_t>(i % 256)) {
+                passed = false; // Real validation failure
+                break;
+            }
+        }
+    }
+    catch (const std::exception& e) {
+        passed = false; // Real exception handling
+    }
+    LogTestResult("Memory Allocation", passed, details);
+}
+```
+
+The BasicTests demonstrate the pattern that DX12 and Vulkan tests should follow when implementing real API calls.
 
 ## Dependencies
 
