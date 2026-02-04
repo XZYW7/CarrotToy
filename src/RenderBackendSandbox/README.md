@@ -39,15 +39,20 @@ RenderBackendSandbox/
 
 All BasicTests include actual validation logic (not stubs) and run on all platforms.
 
-### DX12 Sandbox
-- Device initialization testing (stub implementation)
+### DX12 Sandbox ✨ WITH REAL API IMPLEMENTATION
+- **Device Initialization**: ✅ **IMPLEMENTED** - Real DX12 API test
+  - Creates DXGI factory
+  - Enumerates graphics adapters
+  - Gets adapter information (GPU name, VRAM)
+  - Creates D3D12 device with feature level detection
+  - Properly releases device on shutdown
 - Command queue and command list creation (stub implementation)
 - Resource creation (buffers, textures) (stub implementation)
 - Pipeline state object (PSO) testing (stub implementation)
 - Descriptor heap management (stub implementation)
 - Swap chain creation and management (stub implementation)
 
-**Note:** DX12 tests require Windows SDK and are currently stub implementations.
+**Note:** DX12 device initialization test includes real DX12 API calls (Windows only). Other tests are stub implementations. Install Windows SDK to run the real test.
 
 ### Vulkan Sandbox ✨ WITH REAL API IMPLEMENTATION
 - **Instance Creation**: ✅ **IMPLEMENTED** - Real Vulkan API test
@@ -84,10 +89,31 @@ The sandbox automatically runs all tests on startup:
 
 ### Test Execution Order
 1. **Basic Tests** - Concrete implementations with real validation
-2. **DX12 Tests** - DirectX 12 API tests (stub implementations)
+2. **DX12 Tests** - DirectX 12 API tests (**Device Initialization test has real implementation**)
 3. **Vulkan Tests** - Vulkan API tests (**Instance Creation test has real implementation**)
 
 ### Expected Output
+
+**With Windows SDK on Windows (DX12):**
+```
+========================================
+=== Running DX12 Sandbox Tests ===
+========================================
+DX12Sandbox: Test - Device Initialization
+DX12Sandbox: Successfully created DXGI factory
+DX12Sandbox: Found 1 adapter(s)
+DX12Sandbox: Primary Adapter: NVIDIA GeForce RTX 3080
+DX12Sandbox: Dedicated Video Memory: 10240 MB
+DX12Sandbox: Successfully created D3D12 device!
+DX12Sandbox: Feature Level: 12.1
+DX12Sandbox: Device Initialization: PASS - DXGI Factory created, Adapters: 1, GPU: NVIDIA GeForce RTX 3080, VRAM: 10240MB, Feature Level: 12.1
+```
+
+**Without Windows SDK or on non-Windows:**
+```
+DX12Sandbox: DX12 SDK not available - install Windows SDK to run this test
+DX12Sandbox: Device Initialization: FAIL - DX12 SDK not available
+```
 
 **With Vulkan SDK installed:**
 ```
@@ -397,6 +423,83 @@ void VulkanSandbox::TestInstanceCreation()
 - ✅ **Resource Management**: Properly cleans up Vulkan instance
 - ✅ **Cross-Platform**: Works on Linux, Windows, macOS (with Vulkan SDK)
 
+## DX12 Device Initialization Test Implementation
+
+The DX12 sandbox now includes a **real implementation** of device initialization test, demonstrating actual DirectX 12 API usage.
+
+### What the DX12 Test Does
+
+The `TestDeviceInitialization()` method performs the following operations with real DX12 API calls:
+
+1. **Create DXGI Factory**
+   ```cpp
+   ComPtr<IDXGIFactory4> factory;
+   CreateDXGIFactory2(0, IID_PPV_ARGS(&factory));
+   // Creates DXGI factory for enumerating adapters
+   ```
+
+2. **Enumerate Graphics Adapters**
+   ```cpp
+   factory->EnumAdapters1(adapterIndex, &adapter);
+   // Enumerates all graphics adapters in the system
+   ```
+
+3. **Get Adapter Information**
+   ```cpp
+   adapter->GetDesc1(&desc);
+   // Reports GPU name, VRAM, etc.
+   // Example: "NVIDIA GeForce RTX 3080, VRAM: 10240MB"
+   ```
+
+4. **Create D3D12 Device with Feature Level Detection**
+   ```cpp
+   D3D12CreateDevice(adapter.Get(), featureLevel, IID_PPV_ARGS(&device));
+   // Tries feature levels: 12.1, 12.0, 11.1, 11.0
+   // Reports highest supported level
+   ```
+
+5. **Clean Up**
+   ```cpp
+   device.Reset(); // ComPtr automatically releases
+   // Properly releases device in Shutdown()
+   ```
+
+### Conditional Compilation
+
+The implementation uses `__has_include` to detect Windows SDK availability:
+
+- **With Windows SDK on Windows**: Runs real DX12 API calls
+- **Without Windows SDK on Windows**: Reports that SDK is not available
+- **On non-Windows platforms**: Reports that DX12 is Windows-only
+
+### Example Output
+
+**With Windows SDK:**
+```
+DX12Sandbox: Successfully created DXGI factory
+DX12Sandbox: Found 1 adapter(s)
+DX12Sandbox: Primary Adapter: NVIDIA GeForce RTX 3080
+DX12Sandbox: Dedicated Video Memory: 10240 MB
+DX12Sandbox: Successfully created D3D12 device!
+DX12Sandbox: Feature Level: 12.1
+DX12Sandbox: Device Initialization: PASS - DXGI Factory created, Adapters: 1, GPU: NVIDIA GeForce RTX 3080, VRAM: 10240MB, Feature Level: 12.1
+```
+
+**Without Windows SDK:**
+```
+DX12Sandbox: DX12 SDK not available - install Windows SDK to run this test
+DX12Sandbox: Device Initialization: FAIL - DX12 SDK not available
+```
+
+### Benefits of This Implementation
+
+- ✅ **Real DX12 API Usage**: Not a stub - actual API calls
+- ✅ **Proper Error Handling**: Checks HRESULT values and handles exceptions
+- ✅ **Informative Output**: Reports GPU name, VRAM, feature level
+- ✅ **Graceful Degradation**: Works without Windows SDK (reports unavailable)
+- ✅ **Resource Management**: Uses ComPtr for automatic cleanup
+- ✅ **Feature Level Detection**: Automatically detects highest supported D3D feature level
+
 ## Dependencies
 
 - **Core**: Core engine utilities and logging
@@ -413,15 +516,17 @@ void VulkanSandbox::TestInstanceCreation()
 
 ## Notes
 
-- The current implementation uses stub tests to demonstrate the module structure
-- Actual DX12 and Vulkan implementations should be added incrementally
+- **DX12**: Device initialization test now uses real DX12 API calls (Windows with SDK only)
+- **Vulkan**: Instance creation test now uses real Vulkan API calls (all platforms with SDK)
+- **BasicTests**: All tests use real validation logic (platform-independent)
+- Other DX12 and Vulkan tests remain as stubs for future implementation
 - Each sandbox is independent - failures in one don't affect the other
 - Tests can be run individually or all at once
 
 ## Future Enhancements
 
-- [ ] Add actual DX12 API implementations
-- [ ] Add actual Vulkan API implementations
+- [ ] Add more DX12 API implementations (command queues, resources, etc.)
+- [ ] Add more Vulkan API implementations (devices, pipelines, etc.)
 - [ ] Add performance benchmarking
 - [ ] Add API usage pattern examples
 - [ ] Create visual test cases with rendering output
