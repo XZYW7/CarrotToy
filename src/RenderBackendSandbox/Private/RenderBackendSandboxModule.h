@@ -26,7 +26,8 @@ class BasicTests;
 class FRenderBackendSandboxModule : public IModuleInterface
 {
 public:
-    virtual ~FRenderBackendSandboxModule() override = default;
+    FRenderBackendSandboxModule();
+    virtual ~FRenderBackendSandboxModule() override;
 
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;

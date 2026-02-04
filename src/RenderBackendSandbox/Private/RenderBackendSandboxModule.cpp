@@ -5,6 +5,9 @@
 #include "CoreUtils.h"
 #include <iostream>
 
+FRenderBackendSandboxModule::FRenderBackendSandboxModule() = default;
+FRenderBackendSandboxModule::~FRenderBackendSandboxModule() = default;
+
 void FRenderBackendSandboxModule::StartupModule()
 {
     LOG("========================================");
