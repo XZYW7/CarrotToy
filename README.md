@@ -15,7 +15,8 @@
 - **Hot Reload**: Automatic shader reloading when files are modified
 - **PBR Materials**: Built-in physically-based rendering shader support
 - **RHI (Render Hardware Interface)**: Graphics API abstraction layer supporting multiple backends
-- **Multiple Applications**: DefaultGame, TestRHIApp, and CustomModule as independent executables
+- **Multiple Applications**: DefaultGame, TestRHIApp, CustomModule, and RenderBackendSandbox as independent executables
+- **RenderBackendSandbox**: Isolated testing environment for DX12 and Vulkan API experimentation
 
 ## Architecture
 
@@ -24,20 +25,21 @@ The project is organized into modular components with clean separation of concer
 ```
 CarrotToy/
 ├── src/
-│   ├── Runtime/           # Runtime engine modules
-│   │   ├── Platform/      # Platform abstraction (window, events) - NEW
-│   │   ├── Input/         # Input handling (mouse, keyboard) - NEW
-│   │   ├── Core/          # Core engine functionality
-│   │   ├── RHI/           # Render Hardware Interface (separate module)
-│   │   ├── Renderer/      # High-level rendering system
-│   │   └── Launch/        # Application launcher
-│   ├── Editor/            # Material editor UI
-│   ├── DefaultGame/       # Default game application (binary)
-│   ├── TestRHIApp/        # RHI testing application (binary)
-│   └── CustomModule/      # Custom module example (binary)
-├── shaders/               # GLSL/HLSL shader files
-├── docs/                  # Documentation
-└── xmake.lua             # Build configuration
+│   ├── Runtime/                 # Runtime engine modules
+│   │   ├── Platform/            # Platform abstraction (window, events)
+│   │   ├── Input/               # Input handling (mouse, keyboard)
+│   │   ├── Core/                # Core engine functionality
+│   │   ├── RHI/                 # Render Hardware Interface (separate module)
+│   │   ├── Renderer/            # High-level rendering system
+│   │   └── Launch/              # Application launcher
+│   ├── Editor/                  # Material editor UI
+│   ├── DefaultGame/             # Default game application (binary)
+│   ├── TestRHIApp/              # RHI testing application (binary)
+│   ├── CustomModule/            # Custom module example (binary)
+│   └── RenderBackendSandbox/    # DX12/Vulkan sandbox (binary) - NEW
+├── shaders/                     # GLSL/HLSL shader files
+├── docs/                        # Documentation
+└── xmake.lua                   # Build configuration
 ```
 
 ### Module Structure
@@ -51,7 +53,8 @@ The engine follows a layered architecture with well-defined module boundaries:
 - **Renderer**: High-level rendering system with material preview and scene rendering
 - **Launch**: Application entry point and main loop with fixed timestep
 - **Editor**: ImGui-based material editor
-- **Applications**: DefaultGame, TestRHIApp, CustomModule executables
+- **Applications**: DefaultGame, TestRHIApp, CustomModule, RenderBackendSandbox executables
+- **RenderBackendSandbox**: Testing environment for DX12 and Vulkan API implementations
 
 Each module is built as a separate library (shared or static), enabling modular development and testing.
 
@@ -89,17 +92,21 @@ xmake run TestRHIApp
 # Run the custom module example
 xmake run CustomModule
 
+# Run the render backend sandbox
+xmake run RenderBackendSandbox
+
 # Build specific targets
-xmake build Platform       # Platform module (NEW)
-xmake build Input          # Input module (NEW)
-xmake build Core           # Core module
-xmake build RHI            # RHI module
-xmake build Renderer       # Renderer module
-xmake build Launch         # Launch module
-xmake build Editor         # Editor module
-xmake build DefaultGame    # Default game application
-xmake build TestRHIApp     # RHI test application
-xmake build CustomModule   # Custom module application
+xmake build Platform              # Platform module
+xmake build Input                 # Input module
+xmake build Core                  # Core module
+xmake build RHI                   # RHI module
+xmake build Renderer              # Renderer module
+xmake build Launch                # Launch module
+xmake build Editor                # Editor module
+xmake build DefaultGame           # Default game application
+xmake build TestRHIApp            # RHI test application
+xmake build CustomModule          # Custom module application
+xmake build RenderBackendSandbox  # Render backend sandbox (NEW)
 ```
 
 ### Build options
