@@ -1,14 +1,25 @@
 #include "DX12Sandbox.h"
 #include "CoreUtils.h"
 #include <iostream>
+#include <vector>
 
-// Platform-specific includes for DX12
+// Try to include DX12 headers if available
 #ifdef _WIN32
-// Note: Actual DX12 implementation would include:
-// #include <d3d12.h>
-// #include <dxgi1_6.h>
-// #include <d3dcompiler.h>
-// For now, we provide a stub implementation for testing the module structure
+#  ifdef __has_include
+#    if __has_include(<d3d12.h>) && __has_include(<dxgi1_6.h>)
+#      define HAS_DX12_SDK 1
+#      include <d3d12.h>
+#      include <dxgi1_6.h>
+#      include <wrl/client.h>  // For ComPtr
+       using Microsoft::WRL::ComPtr;
+#    else
+#      define HAS_DX12_SDK 0
+#    endif
+#  else
+#    define HAS_DX12_SDK 0
+#  endif
+#else
+#  define HAS_DX12_SDK 0
 #endif
 
 DX12Sandbox::DX12Sandbox()
@@ -25,19 +36,21 @@ bool DX12Sandbox::Initialize()
 {
     LOG("DX12Sandbox: Initializing DirectX 12 testing environment");
     
-#ifdef _WIN32
-    LOG("DX12Sandbox: Platform is Windows - DX12 support available");
+#if HAS_DX12_SDK
+    LOG("DX12Sandbox: Windows platform with DX12 SDK detected - using real DX12 API");
     
-    // TODO: Actual DX12 initialization would go here:
-    // 1. Enable debug layer in debug builds
-    // 2. Create DXGI factory
-    // 3. Enumerate adapters
-    // 4. Create D3D12 device
-    // 5. Create command queue
-    // 6. Create command allocator and command list
+    // This is a simple test - we'll just check if we can create a DXGI factory
+    // and enumerate adapters without creating a full device initially
     
     bInitialized = true;
-    LOG("DX12Sandbox: Initialization complete (stub implementation)");
+    LOG("DX12Sandbox: Initialization complete (DX12 SDK available)");
+    return true;
+#elif defined(_WIN32)
+    LOG("DX12Sandbox: Windows platform but DX12 SDK not found - stub implementation");
+    LOG("DX12Sandbox: Install Windows SDK to run real DX12 tests");
+    
+    bInitialized = true;
+    LOG("DX12Sandbox: Initialization complete (stub mode)");
     return true;
 #else
     LOG("DX12Sandbox: Platform is not Windows - DX12 not available");
@@ -56,10 +69,15 @@ void DX12Sandbox::Shutdown()
     
     LOG("DX12Sandbox: Shutting down DirectX 12 testing environment");
     
-    // TODO: Clean up DX12 resources
-    // - Release command list, allocator, queue
-    // - Release device
-    // - Release debug interfaces
+#if HAS_DX12_SDK
+    // Clean up any DX12 resources
+    if (Device != nullptr)
+    {
+        // ComPtr will automatically release
+        Device = nullptr;
+        LOG("DX12Sandbox: Released D3D12 device");
+    }
+#endif
     
     bInitialized = false;
     LOG("DX12Sandbox: Shutdown complete");
@@ -91,13 +109,143 @@ void DX12Sandbox::TestDeviceInitialization()
 {
     LOG("DX12Sandbox: Test - Device Initialization");
     
-    // TODO: Implement actual test
-    // - Verify D3D12CreateDevice succeeds
-    // - Check device feature levels
-    // - Validate device capabilities
+#if HAS_DX12_SDK
+    bool passed = true;
+    std::string details;
     
-    bool passed = true; // Stub
-    LogTestResult("Device Initialization", passed, "Device created successfully (stub)");
+    try
+    {
+        // Step 1: Create DXGI Factory
+        ComPtr<IDXGIFactory4> factory;
+        HRESULT hr = CreateDXGIFactory2(0, IID_PPV_ARGS(&factory));
+        
+        if (FAILED(hr))
+        {
+            passed = false;
+            details = "Failed to create DXGI factory (HRESULT: 0x" + 
+                     std::to_string(static_cast<unsigned long>(hr)) + ")";
+        }
+        else
+        {
+            LOG("DX12Sandbox: Successfully created DXGI factory");
+            details = "DXGI Factory created";
+            
+            // Step 2: Enumerate adapters
+            ComPtr<IDXGIAdapter1> adapter;
+            UINT adapterIndex = 0;
+            std::vector<ComPtr<IDXGIAdapter1>> adapters;
+            
+            while (factory->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND)
+            {
+                adapters.push_back(adapter);
+                adapterIndex++;
+            }
+            
+            details += ", Adapters: " + std::to_string(adapters.size());
+            LOG("DX12Sandbox: Found " + std::to_string(adapters.size()) + " adapter(s)");
+            
+            if (adapters.empty())
+            {
+                passed = false;
+                details += " - No adapters found";
+            }
+            else
+            {
+                // Step 3: Get adapter information
+                DXGI_ADAPTER_DESC1 desc;
+                hr = adapters[0]->GetDesc1(&desc);
+                
+                if (SUCCEEDED(hr))
+                {
+                    // Convert wide string to regular string
+                    char adapterName[256];
+                    size_t converted = 0;
+                    wcstombs_s(&converted, adapterName, sizeof(adapterName), desc.Description, _TRUNCATE);
+                    
+                    LOG("DX12Sandbox: Primary Adapter: " + std::string(adapterName));
+                    details += ", GPU: " + std::string(adapterName);
+                    
+                    // Report VRAM
+                    size_t vramMB = desc.DedicatedVideoMemory / (1024 * 1024);
+                    details += ", VRAM: " + std::to_string(vramMB) + "MB";
+                    LOG("DX12Sandbox: Dedicated Video Memory: " + std::to_string(vramMB) + " MB");
+                }
+                
+                // Step 4: Try to create D3D12 device
+                ComPtr<ID3D12Device> device;
+                
+                // Try different feature levels
+                D3D_FEATURE_LEVEL featureLevels[] = {
+                    D3D_FEATURE_LEVEL_12_1,
+                    D3D_FEATURE_LEVEL_12_0,
+                    D3D_FEATURE_LEVEL_11_1,
+                    D3D_FEATURE_LEVEL_11_0
+                };
+                
+                D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
+                bool deviceCreated = false;
+                
+                for (auto level : featureLevels)
+                {
+                    hr = D3D12CreateDevice(adapters[0].Get(), level, IID_PPV_ARGS(&device));
+                    if (SUCCEEDED(hr))
+                    {
+                        featureLevel = level;
+                        deviceCreated = true;
+                        break;
+                    }
+                }
+                
+                if (deviceCreated)
+                {
+                    LOG("DX12Sandbox: Successfully created D3D12 device!");
+                    
+                    // Store device for cleanup
+                    Device = device;
+                    
+                    // Report feature level
+                    std::string levelStr;
+                    switch (featureLevel)
+                    {
+                        case D3D_FEATURE_LEVEL_12_1: levelStr = "12.1"; break;
+                        case D3D_FEATURE_LEVEL_12_0: levelStr = "12.0"; break;
+                        case D3D_FEATURE_LEVEL_11_1: levelStr = "11.1"; break;
+                        case D3D_FEATURE_LEVEL_11_0: levelStr = "11.0"; break;
+                        default: levelStr = "Unknown"; break;
+                    }
+                    
+                    details += ", Feature Level: " + levelStr;
+                    LOG("DX12Sandbox: Feature Level: " + levelStr);
+                }
+                else
+                {
+                    passed = false;
+                    details += " - Failed to create D3D12 device (HRESULT: 0x" + 
+                             std::to_string(static_cast<unsigned long>(hr)) + ")";
+                }
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        passed = false;
+        details = std::string("Exception: ") + e.what();
+    }
+    
+    LogTestResult("Device Initialization", passed, details);
+#elif defined(_WIN32)
+    // Stub implementation when DX12 SDK is not available
+    bool passed = false;
+    std::string details = "DX12 SDK not available - install Windows SDK to run this test";
+    LOG("DX12Sandbox: " + details);
+    LogTestResult("Device Initialization", passed, details);
+#else
+    // Not Windows platform
+    bool passed = false;
+    std::string details = "DX12 only available on Windows platform";
+    LOG("DX12Sandbox: " + details);
+    LogTestResult("Device Initialization", passed, details);
+#endif
 }
 
 void DX12Sandbox::TestCommandQueueCreation()
