@@ -17,6 +17,7 @@
 // Forward declarations
 class DX12Sandbox;
 class VulkanSandbox;
+class BasicTests;
 
 /**
  * RenderBackendSandbox Application Module
@@ -33,6 +34,7 @@ public:
     virtual bool IsGameModule() const override { return false; }
     
     // Sandbox test runners
+    void RunBasicTests();
     void RunDX12Tests();
     void RunVulkanTests();
     void RunAllTests();
@@ -41,6 +43,7 @@ private:
     void InitializeSandbox();
     void ShutdownSandbox();
     
+    std::unique_ptr<BasicTests> BasicTestEnvironment;
     std::unique_ptr<DX12Sandbox> DX12TestEnvironment;
     std::unique_ptr<VulkanSandbox> VulkanTestEnvironment;
     bool bSandboxInitialized = false;

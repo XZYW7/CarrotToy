@@ -1,4 +1,5 @@
 #include "RenderBackendSandboxModule.h"
+#include "BasicTests.h"
 #include "DX12Sandbox.h"
 #include "VulkanSandbox.h"
 #include "CoreUtils.h"
@@ -11,10 +12,12 @@ void FRenderBackendSandboxModule::StartupModule()
     LOG("========================================");
     LOG("");
     LOG("This sandbox module provides an isolated testing environment for:");
+    LOG("  - Basic functionality testing (concrete implementations)");
     LOG("  - DirectX 12 (DX12) API implementation and testing");
     LOG("  - Vulkan API implementation and testing");
     LOG("");
     LOG("Purpose:");
+    LOG("  - Validate basic testing framework with real tests");
     LOG("  - Experiment with DX12 and Vulkan APIs");
     LOG("  - Validate backend implementations before RHI integration");
     LOG("  - Test rendering features in isolation");
@@ -41,6 +44,19 @@ void FRenderBackendSandboxModule::ShutdownModule()
 void FRenderBackendSandboxModule::InitializeSandbox()
 {
     LOG("RenderBackendSandbox: Initializing sandbox environment");
+    
+    // Initialize basic tests
+    LOG("");
+    LOG("--- Initializing Basic Tests ---");
+    BasicTestEnvironment = std::make_unique<BasicTests>();
+    if (BasicTestEnvironment->Initialize())
+    {
+        LOG("Basic tests initialized successfully");
+    }
+    else
+    {
+        LOG("Basic tests initialization failed");
+    }
     
     // Initialize DX12 sandbox
     LOG("");
@@ -96,8 +112,44 @@ void FRenderBackendSandboxModule::ShutdownSandbox()
         DX12TestEnvironment.reset();
     }
     
+    // Shutdown basic tests
+    if (BasicTestEnvironment)
+    {
+        BasicTestEnvironment->Shutdown();
+        BasicTestEnvironment.reset();
+    }
+    
     bSandboxInitialized = false;
     LOG("RenderBackendSandbox: Sandbox environment shutdown complete");
+}
+
+void FRenderBackendSandboxModule::RunBasicTests()
+{
+    LOG("");
+    LOG("========================================");
+    LOG("=== Running Basic Concrete Tests ===");
+    LOG("========================================");
+    
+    if (BasicTestEnvironment && BasicTestEnvironment->IsInitialized())
+    {
+        BasicTestEnvironment->RunTests();
+        
+        // Print test results summary
+        const auto& results = BasicTestEnvironment->GetTestResults();
+        LOG("");
+        LOG("Basic Test Results Summary:");
+        for (const auto& result : results)
+        {
+            LOG("  " + result);
+        }
+        LOG("");
+        LOG("Summary: " + std::to_string(BasicTestEnvironment->GetPassedTests()) + 
+            " passed, " + std::to_string(BasicTestEnvironment->GetFailedTests()) + " failed");
+    }
+    else
+    {
+        LOG("Basic tests not initialized - tests skipped");
+    }
 }
 
 void FRenderBackendSandboxModule::RunDX12Tests()
@@ -161,6 +213,9 @@ void FRenderBackendSandboxModule::RunAllTests()
     }
     
     LOG("RenderBackendSandbox: Running all sandbox tests");
+    
+    // Run basic tests first
+    RunBasicTests();
     
     // Run DX12 tests
     RunDX12Tests();
