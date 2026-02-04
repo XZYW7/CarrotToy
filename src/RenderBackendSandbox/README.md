@@ -40,22 +40,31 @@ RenderBackendSandbox/
 All BasicTests include actual validation logic (not stubs) and run on all platforms.
 
 ### DX12 Sandbox
-- Device initialization testing
-- Command queue and command list creation
-- Resource creation (buffers, textures)
-- Pipeline state object (PSO) testing
-- Descriptor heap management
-- Swap chain creation and management
+- Device initialization testing (stub implementation)
+- Command queue and command list creation (stub implementation)
+- Resource creation (buffers, textures) (stub implementation)
+- Pipeline state object (PSO) testing (stub implementation)
+- Descriptor heap management (stub implementation)
+- Swap chain creation and management (stub implementation)
 
-### Vulkan Sandbox
-- Instance and device creation
-- Physical device selection
-- Logical device initialization
-- Queue family management
-- Command buffer creation
-- Resource creation (buffers, images)
-- Pipeline creation
-- Swap chain management
+**Note:** DX12 tests require Windows SDK and are currently stub implementations.
+
+### Vulkan Sandbox ✨ WITH REAL API IMPLEMENTATION
+- **Instance Creation**: ✅ **IMPLEMENTED** - Real Vulkan API test
+  - Queries Vulkan API version
+  - Enumerates available instance extensions
+  - Creates minimal Vulkan instance
+  - Enumerates physical devices and GPU information
+  - Properly destroys instance on shutdown
+- Physical device selection (stub implementation)
+- Logical device initialization (stub implementation)
+- Queue family management (stub implementation)
+- Command buffer creation (stub implementation)
+- Resource creation (buffers, images) (stub implementation)
+- Pipeline creation (stub implementation)
+- Swap chain management (stub implementation)
+
+**Note:** Vulkan instance creation test includes real Vulkan API calls. Other tests are stub implementations. Install Vulkan SDK to run the real test.
 
 ## Building
 
@@ -76,10 +85,36 @@ The sandbox automatically runs all tests on startup:
 ### Test Execution Order
 1. **Basic Tests** - Concrete implementations with real validation
 2. **DX12 Tests** - DirectX 12 API tests (stub implementations)
-3. **Vulkan Tests** - Vulkan API tests (stub implementations)
+3. **Vulkan Tests** - Vulkan API tests (**Instance Creation test has real implementation**)
 
 ### Expected Output
 
+**With Vulkan SDK installed:**
+```
+========================================
+=== Running Vulkan Sandbox Tests ===
+========================================
+VulkanSandbox: Test - Instance Creation
+VulkanSandbox: Vulkan API Version: 1.3.X
+VulkanSandbox: Found 15 instance extensions
+VulkanSandbox: Available extensions:
+  - VK_KHR_surface
+  - VK_KHR_xcb_surface
+  - VK_KHR_xlib_surface
+  ... and more
+VulkanSandbox: Successfully created Vulkan instance!
+VulkanSandbox: Found 1 physical device(s)
+VulkanSandbox: Primary GPU: NVIDIA GeForce RTX 3080
+VulkanSandbox: Instance Creation: PASS - Vulkan API Version: 1.3.X, Extensions: 15, Physical Devices: 1, GPU: NVIDIA GeForce RTX 3080
+```
+
+**Without Vulkan SDK:**
+```
+VulkanSandbox: Vulkan SDK not found - stub implementation
+VulkanSandbox: Instance Creation: FAIL - Vulkan SDK not available - install Vulkan SDK to run this test
+```
+
+**Basic Tests output:**
 ```
 ========================================
 === Running Basic Concrete Tests ===
@@ -270,6 +305,97 @@ void BasicTests::TestMemoryAllocation()
 ```
 
 The BasicTests demonstrate the pattern that DX12 and Vulkan tests should follow when implementing real API calls.
+
+## Vulkan Instance Creation Test Implementation
+
+The Vulkan sandbox now includes a **real implementation** of instance creation test, demonstrating actual Vulkan API usage.
+
+### What the Vulkan Test Does
+
+The `TestInstanceCreation()` method performs the following operations with real Vulkan API calls:
+
+1. **Query Vulkan Version**
+   ```cpp
+   vkEnumerateInstanceVersion(&apiVersion);
+   // Reports: "Vulkan API Version: 1.3.X"
+   ```
+
+2. **Enumerate Instance Extensions**
+   ```cpp
+   vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+   // Reports available extensions like VK_KHR_surface, VK_KHR_xcb_surface, etc.
+   ```
+
+3. **Create Minimal Vulkan Instance**
+   ```cpp
+   VkInstanceCreateInfo createInfo = {};
+   createInfo.pApplicationInfo = &appInfo;
+   vkCreateInstance(&createInfo, nullptr, &instance);
+   // Creates a real Vulkan instance without any extensions
+   ```
+
+4. **Enumerate Physical Devices**
+   ```cpp
+   vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+   vkGetPhysicalDeviceProperties(devices[0], &deviceProperties);
+   // Reports GPU name (e.g., "NVIDIA GeForce RTX 3080")
+   ```
+
+5. **Clean Up**
+   ```cpp
+   vkDestroyInstance(instance, nullptr);
+   // Properly destroys the instance in Shutdown()
+   ```
+
+### Conditional Compilation
+
+The implementation uses `__has_include` to detect Vulkan SDK availability:
+
+- **With Vulkan SDK**: Runs real Vulkan API calls
+- **Without Vulkan SDK**: Reports that SDK is not available, test shows as FAIL with informative message
+
+### Example Code Pattern
+
+This implementation shows the pattern for adding more Vulkan tests:
+
+```cpp
+void VulkanSandbox::TestInstanceCreation()
+{
+#if HAS_VULKAN_SDK
+    bool passed = true;
+    std::string details;
+    
+    try {
+        // Step 1: Perform Vulkan API operation
+        VkResult result = vkSomeVulkanFunction(...);
+        
+        if (result == VK_SUCCESS) {
+            details = "Operation successful";
+        } else {
+            passed = false;
+            details = "Operation failed";
+        }
+    }
+    catch (const std::exception& e) {
+        passed = false;
+        details = std::string("Exception: ") + e.what();
+    }
+    
+    LogTestResult("Test Name", passed, details);
+#else
+    LogTestResult("Test Name", false, "Vulkan SDK not available");
+#endif
+}
+```
+
+### Benefits of This Implementation
+
+- ✅ **Real Vulkan API Usage**: Not a stub - actual API calls
+- ✅ **Proper Error Handling**: Checks VkResult and handles exceptions
+- ✅ **Informative Output**: Reports version, extensions, GPU information
+- ✅ **Graceful Degradation**: Works without Vulkan SDK (reports unavailable)
+- ✅ **Resource Management**: Properly cleans up Vulkan instance
+- ✅ **Cross-Platform**: Works on Linux, Windows, macOS (with Vulkan SDK)
 
 ## Dependencies
 
