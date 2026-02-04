@@ -201,7 +201,7 @@ void DX12Sandbox::TestDeviceInitialization()
                     LOG("DX12Sandbox: Successfully created D3D12 device!");
                     
                     // Store device for cleanup
-                    Device = device;
+                    Device = device.Detach();
                     
                     // Report feature level
                     std::string levelStr;
